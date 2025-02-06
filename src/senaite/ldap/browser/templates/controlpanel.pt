@@ -1,0 +1,96 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="context/prefs_main_template/macros/master"
+      i18n:domain="plone">
+<body>
+
+<metal:main metal:fill-slot="prefs_configlet_main">
+  <style type="text/css"
+         tal:content="string:#form-ldapsettings label {display:block;}">
+  </style>
+
+  <script type="text/javascript" src="++plone++static/components/requirejs/require.js"></script>
+  <script type="text/javascript" src="yafowil.plone.js"></script>
+  <link rel="stylesheet" href="yafowil.plone.css" type="text/css" media="screen" />
+
+  <a id="setup-link" class="link-parent"
+     tal:attributes="href string:$portal_url/@@overview-controlpanel"
+     i18n:translate="">
+    Site Setup
+  </a>
+
+  <h1 i18n:translate="">LDAP/ Active Directory Configuration</h1>
+
+  <div class="border border-rounded p-2 bg-light">
+    <h5 class="text-secondary" i18n:translate="">Connection Test</h5>
+    <tal:block tal:define="state view/connection_test;
+                           state_ok python:state[0];
+                           state_msg python:state[1]">
+      <strong tal:content="python: state_ok and 'OK' or 'ERROR'"
+              tal:attributes="style python: state_ok and 'color:green' or 'color:red'">
+        state
+      </strong>: <span tal:content="state_msg">msg</span>
+      <br tal:condition="state_ok" />
+      <a href=""
+         tal:condition="state_ok"
+         tal:attributes="href string:${context/absolute_url}/@@plone_ldapinspector"
+         data-toggle="modal"
+         data-target="#ldap-inspector"
+         class="btn btn-outline-secondary btn-sm my-2">
+        LDAP Inspector
+      </a>
+    </tal:block>
+  </div>
+
+  <!-- LDAP Inspector -->
+  <div class="modal" id="ldap-inspector" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">LDAP Child Inspector</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          Loading ...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Settings</h2>
+
+  <tal:form replace="structure python:view.form()" />
+
+  <script type="text/javascript">
+   $(document).ready(function () {
+     $("#ldap-inspector").on("show.bs.modal", function (e) {
+       var modal = $(this);
+       var url = e.relatedTarget.href;
+
+       // Load content via AJAX
+       $.ajax({
+         url: url,
+         type: "GET",
+         success: function (data) {
+           var parsedHTML = $('<div>').html(data);
+           var content = parsedHTML.find('#portal-column-content').html();
+           modal.find(".modal-body").html(content || '<p class="text-danger">Content not found.</p>');
+         },
+         error: function () {
+           modal.find(".modal-body").html("<p class='text-danger'>Failed to load content.</p>");
+         }
+       });
+     });
+   });
+  </script>
+
+
+</metal:main>
+
+</body>
+</html>

@@ -1,0 +1,25 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:plone="http://namespaces.plone.org/plone">
+
+    <!-- package includes -->
+    <include package=".theme"/>
+
+    <!-- LDAP Control Panel -->
+    <browser:page
+        name="plone_ldapcontrolpanel"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+        class=".controlpanel.LDAPControlPanel"
+        template="templates/controlpanel.pt"
+        permission="cmf.ManagePortal"
+        layer="senaite.ldap.interfaces.ISenaiteLdap"
+        />
+
+    <!-- Static directory for js, css and image resources -->
+    <plone:static
+        directory="static"
+        type="plone"
+        name="senaite.ldap.static" />
+
+</configure>
