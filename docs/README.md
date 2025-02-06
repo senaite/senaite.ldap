@@ -9,7 +9,7 @@ The following steps will guide you through the installation procedure on a [Debi
 
 However, [SENAITE](https://www.senaite.com) also runs on other distributions such as. [Ubuntu](https://ubuntu.com), [SUSE](https://www.suse.com/), etc. and other Unix and Unix-like systems such as [FreeBSD](https://www.freebsd.org/) and  [MacOS](https://de.wikipedia.org/wiki/MacOS).
 
-!!! tip
+**tip**
 
     Use a virtualization environment such as [VirtualBox](https://www.virtualbox.org) or [VMWare](https://www.vmware.com/products/desktop-hypervisor/workstation-and-fusion) to locally install a dedicated Debian VM.
 
@@ -27,7 +27,7 @@ Also read [this upgrade guide](https://github.com/senaite/senaite.core/blob/2.x/
 [Pyenv](https://github.com/pyenv/pyenv) is a simple Python version management environment that lets you easily install and switch between multiple versions of Python.
 It's simple, unobtrusive, and follows the UNIX tradition of single-purpose tools that do one thing well.
 
-!!! info "Package Requirements"
+**info "Package Requirements"**
 
     This step requires manual installation of the following packages:
     
@@ -44,7 +44,7 @@ curl https://pyenv.run | bash
 Please follow these instructions on [how to setup your shell environment](https://github.com/pyenv/pyenv?tab=readme-ov-file#b-set-up-your-shell-environment-for-pyenv) after successful installation.
 
 
-!!! info "TL;DR"
+**info "TL;DR"**
 
     If you are a [ZSH](https://www.zsh.org/) user add this to your `~/.zshrc`:
 
@@ -62,7 +62,7 @@ Please follow these instructions on [how to setup your shell environment](https:
     echo 'eval "$(pyenv init -)"' >> ~/.bashrc
     ```
 
-!!! tip
+**tip**
 
     Run `pyenv doctor` to see if your environment is properly configured.
 
@@ -74,7 +74,7 @@ Please follow these instructions on [how to setup your shell environment](https:
 pyenv install 2.7.18
 ```
 
-!!! tip
+**tip**
 
     Run `pyenv versions` check installed versions
 
@@ -105,7 +105,7 @@ $ which python
 
 The `senaite.ldap` package contains a [Buildout](https://www.buildout.org/en/latest/) configuration that can be used to setup a fully working SENAITE environment.
 
-!!! note
+**note**
 
     It is not possible to install `senaite.ldap` via [`pip`](https://pip.pypa.io/en/stable/)!
 
@@ -118,7 +118,7 @@ $ unzip senaite.ldap-1.0.0.zip
 $ cd senaite.ldap-1.0.0
 ```
 
-!!! info "Package Requirements"
+**info "Package Requirements"**
     
     ```
     sudo apt install unzip
@@ -171,7 +171,7 @@ Starting server in PID 4481.
 Serving on http://localhost:8080
 ```
 
-!!! tip
+**tip**
 
     You can hit `Ctrl+c` to stop the server
 
@@ -179,7 +179,7 @@ Serving on http://localhost:8080
 Opening this page will allow you to create a new SENAITE site in the database.
 
 
-!!! note
+**note**
 
     Please install `senaite.ldap` via the [SENAITE Add-on controlpanel](http://localhost:8080/senaite/@@overview-controlpanel)
 
@@ -199,7 +199,7 @@ $ buildout -c development.cfg
 This will checkout the source distributions via [Git](https://git-scm.com) of
 SENAITE and all the dependent add-ons into the `src` directory.
 
-!!! important
+**important**
 
     Remember to run the migration steps via the [SENAITE Add-on controlpanel](http://localhost:8080/senaite/prefs_install_products_form) if upgrading an existing database!
 
@@ -213,3 +213,5 @@ You can run the tests from with the buildout directory:
 ```shell
 $ bin/test
 ```
+
+
