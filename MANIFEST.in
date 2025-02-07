@@ -2,6 +2,9 @@ include *.md
 include *.yml
 include *.cfg
 include *.txt
+global-exclude .DS_Store
 recursive-include docs *
 recursive-include templates *
 recursive-include src *
+recursive-exclude src/senaite *.pyc
+recursive-exclude src/senaite *.mo

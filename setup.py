@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 version = "1.0.0"
 
-with open(join(dirname(__file__), "docs", "README.md")) as f:
+with open(join(dirname(__file__), "docs", "README.rst")) as f:
     long_description = f.read()
 
 with open(join(dirname(__file__), "docs", "CHANGES.md")) as f:
@@ -19,7 +19,6 @@ setup(
     version=version,
     description="PAS Plugin for AD/LDAP",
     long_description=long_description,
-    long_description_content_type='text/markdown',
     classifiers=[
         "Framework :: Plone",
         "Framework :: Zope2",
