@@ -4,7 +4,7 @@ from os.path import join
 from os.path import dirname
 from setuptools import setup, find_packages
 
-version = "1.0.0"
+version = "1.1.0"
 
 with open(join(dirname(__file__), "docs", "README.rst")) as f:
     long_description = f.read()
