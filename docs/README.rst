@@ -1,4 +1,4 @@
-.. image:: https://raw.githubusercontent.com/senaite/senaite.ldap/master/static/logo_pypi.png
+.. image:: https://raw.githubusercontent.com/senaite/senaite.ldap/master/static/senaite.ldap-pypi.png
    :target: https://github.com/senaite/senaite.ldap#readme
    :alt: senaite.ldap
    :height: 128
