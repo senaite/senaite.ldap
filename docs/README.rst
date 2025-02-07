@@ -35,6 +35,14 @@ with known good versions of its dependencies and integrates it into the SENAITE
 UI.
 
 
+Dependencies
+============
+
+The following packages need to be installed on the server::
+
+    apt get install build_essentials libsasl2-dev libldap2-dev libssl-dev
+
+
 License
 =======
 
