@@ -29,6 +29,7 @@
       title="SENAITE.LDAP"
       description="Uninstall senaite.ldap"
       directory="profiles/uninstall"
+      post_handler="senaite.ldap.setuphandlers.uninstall"
       provides="Products.GenericSetup.interfaces.EXTENSION"/>
 
   <!-- Setup handler -->

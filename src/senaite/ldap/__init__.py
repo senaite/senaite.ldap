@@ -3,9 +3,8 @@
 import logging
 
 from bika.lims.api import get_request
-from zope.i18nmessageid import MessageFactory
-
 from senaite.ldap.interfaces import ISenaiteLdap
+from zope.i18nmessageid import MessageFactory
 
 PRODUCT_NAME = "senaite.ldap"
 PROFILE_ID = "profile-{}:default".format(PRODUCT_NAME)

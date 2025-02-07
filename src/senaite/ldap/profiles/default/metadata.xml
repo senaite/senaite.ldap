@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <metadata>
-  <version>1000</version>
+  <version>1100</version>
   <dependencies>
-    <dependency>profile-pas.plugins.ldap:default</dependency>
+    <dependency>profile-pas.plugins.ldap.plonecontrolpanel:default</dependency>
   </dependencies>
 </metadata>
