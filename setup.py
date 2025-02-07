@@ -9,7 +9,7 @@ version = "1.0.0"
 with open(join(dirname(__file__), "docs", "README.rst")) as f:
     long_description = f.read()
 
-with open(join(dirname(__file__), "docs", "CHANGES.md")) as f:
+with open(join(dirname(__file__), "docs", "CHANGES.rst")) as f:
     long_description += "\n\n"
     long_description += f.read()
 
