@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://github.com/senaite/senaite.ldap">
-    <img src="static/ldap-logo.png" alt="SENAITE LDAP" height="64" />
+    <img src="static/senaite.ldap.png" alt="SENAITE LDAP" height="64" />
   </a>
   <p>PAS Plugin for AD/LDAP</p>
 
