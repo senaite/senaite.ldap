@@ -29,7 +29,7 @@ setup(
     keywords=["senaite", "lims"],
     author="RIDING BYTES & NARALABS",
     author_email="senaite@senaite.com",
-    url="senaite/senaite.ldap",
+    url="https://github.com/senaite/senaite.ldap",
     license="GPLv2",
     packages=find_packages("src"),
     package_dir={"": "src"},
