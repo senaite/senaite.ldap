@@ -55,6 +55,8 @@ setup(
         "yafowil.widget.dict==1.8",
         "yafowil.yaml==2.0",
         "setuptools",
+        # plumber >= 2.0.0 does not support Python 2.x anymore
+        "plumber<2.0.0",
     ],
     extras_require={
         "test": [
