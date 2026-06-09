@@ -1,7 +1,7 @@
 Changelog
 =========
 
-1.1.0 (unreleased)
+1.1.0 (2026-06-10)
 ------------------
 
 - #2 Guard node.ext.ldap paged search against empty/cookie-less responses
