@@ -39,3 +39,5 @@ def initialize(context):
     """Initializer called when used as a Zope 2 product
     """
     logger.info("*** Initializing SENAITE.LDAP package ***")
+    from senaite.ldap.patches import apply_patches
+    apply_patches()
