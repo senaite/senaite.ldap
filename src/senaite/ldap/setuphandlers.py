@@ -3,15 +3,13 @@
 from senaite.ldap import logger
 
 DEPENDENCIES = [
-    "yafowil.plone",
     "pas.plugins.ldap",
-    "pas.plugins.ldap.plonecontrolpanel",
 ]
 
 REGISTRY_KEYS = [
     "pas.plugins.ldap",
-    # "yafowil",
-    # "plone.bundles/yafowil",
+    "yafowil",
+    "plone.bundles/yafowil",
 ]
 
 

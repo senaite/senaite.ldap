@@ -4,7 +4,7 @@ from os.path import join
 from os.path import dirname
 from setuptools import setup, find_packages
 
-version = "1.1.0"
+version = "2.0.0.dev0"
 
 with open(join(dirname(__file__), "docs", "README.rst")) as f:
     long_description = f.read()
@@ -38,25 +38,24 @@ setup(
     zip_safe=False,
     install_requires=[
         "senaite.lims",
-        "python-ldap==3.3.1",
+        # PAS plugin only. The `pas.plugins.ldap.plonecontrolpanel`
+        # sub-package depends on YAFOWIL and is intentionally not
+        # included in our ZCML; we render the control panel ourselves.
+        # Pinned to 1.8.2 because newer releases may make YAFOWIL a
+        # hard dependency of the plugin itself.
         "pas.plugins.ldap==1.8.2",
-        "yafowil==3.1.1",
-        "yafowil.plone==4.0.0a4",
+        "node.ext.ldap==1.2",
+        "python-ldap==3.3.1",
         "pyasn1==0.4.8",
         "pyasn1-modules==0.2.8",
-        "node.ext.ldap==1.2",
-        "bda.cache==1.3.0",
         "node==1.2",
         "odict==1.9.0",
+        "bda.cache==1.3.0",
         "passlib==1.7.4",
         "python-memcached==1.59",
-        "webresource==1.2",
-        "yafowil.widget.array==1.7",
-        "yafowil.widget.dict==1.8",
-        "yafowil.yaml==2.0",
-        "setuptools",
         # plumber >= 2.0.0 does not support Python 2.x anymore
         "plumber<2.0.0",
+        "setuptools",
     ],
     extras_require={
         "test": [
@@ -64,7 +63,18 @@ setup(
             "Products.SecureMailHost",
             "plone.app.testing",
             "unittest2",
-        ]
+        ],
+        # Kept around for anyone still wanting the 1.x YAFOWIL-based
+        # control panel during the 2.x transition. The default
+        # control panel does not need any of these.
+        "legacy_yafowil": [
+            "yafowil==3.1.1",
+            "yafowil.plone==4.0.0a4",
+            "yafowil.widget.array==1.7",
+            "yafowil.widget.dict==1.8",
+            "yafowil.yaml==2.0",
+            "webresource==1.2",
+        ],
     },
     entry_points="""
       # -*- Entry points: -*-

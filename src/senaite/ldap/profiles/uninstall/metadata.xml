@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <metadata>
-  <version>1100</version>
-  <dependencies>
-    <dependency>profile-pas.plugins.ldap.plonecontrolpanel:default</dependency>
-  </dependencies>
+  <version>2000</version>
 </metadata>
