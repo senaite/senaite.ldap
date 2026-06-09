@@ -1,0 +1,15 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup">
+
+  <genericsetup:upgradeStep
+      title="senaite.ldap 2.0.0: migrate to native control panel"
+      description="Drop the orphan YAFOWIL registry records left by
+                   the 1.x install. The PAS plugin (pasldap) and its
+                   persistent configuration are unchanged."
+      source="1100"
+      destination="2000"
+      handler=".upgrade.upgrade_1100_to_2000"
+      profile="senaite.ldap:default"/>
+
+</configure>

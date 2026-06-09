@@ -16,6 +16,10 @@ disk footprint as well.
 
 - Bump profile version to 2000, drop the
   ``pas.plugins.ldap.plonecontrolpanel`` profile dependency.
+- Replace the YAFOWIL control panel with a native SENAITE form.
+- Upgrade step 1100 → 2000 cleans up orphan YAFOWIL registry records
+  on existing 1.x installs and re-imports the controlpanel profile.
+- Add unit tests for the control panel form helpers.
 
 
 1.1.0 (2026-06-09)
