@@ -4,17 +4,17 @@
       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
       lang="en"
       metal:use-macro="context/prefs_main_template/macros/master"
-      i18n:domain="plone">
+      i18n:domain="senaite.ldap">
 <body>
 
-<metal:main metal:fill-slot="prefs_configlet_main">
-  <style type="text/css"
-         tal:content="string:#form-ldapsettings label {display:block;}">
-  </style>
-
-  <script type="text/javascript" src="++plone++static/components/requirejs/require.js"></script>
-  <script type="text/javascript" src="yafowil.plone.js"></script>
-  <link rel="stylesheet" href="yafowil.plone.css" type="text/css" media="screen" />
+<metal:main metal:fill-slot="prefs_configlet_main"
+            tal:define="portal_url context/@@plone_portal_state/portal_url;
+                        server view/server_data;
+                        cache view/cache_data;
+                        users view/users_data;
+                        groups view/groups_data;
+                        scope_choices view/scope_choices;
+                        expires_units view/expires_unit_choices;">
 
   <a id="setup-link" class="link-parent"
      tal:attributes="href string:$portal_url/@@overview-controlpanel"
@@ -22,73 +22,376 @@
     Site Setup
   </a>
 
-  <h1 i18n:translate="">LDAP/ Active Directory Configuration</h1>
+  <h1 i18n:translate="">LDAP / Active Directory Configuration</h1>
 
-  <div class="border border-rounded p-2 bg-light">
-    <h5 class="text-secondary" i18n:translate="">Connection Test</h5>
-    <tal:block tal:define="state view/connection_test;
-                           state_ok python:state[0];
-                           state_msg python:state[1]">
-      <strong tal:content="python: state_ok and 'OK' or 'ERROR'"
-              tal:attributes="style python: state_ok and 'color:green' or 'color:red'">
-        state
-      </strong>: <span tal:content="state_msg">msg</span>
-      <br tal:condition="state_ok" />
-      <a href=""
-         tal:condition="state_ok"
-         tal:attributes="href string:${context/absolute_url}/@@plone_ldapinspector"
-         data-toggle="modal"
-         data-target="#ldap-inspector"
-         class="btn btn-outline-secondary btn-sm my-2">
-        LDAP Inspector
-      </a>
-    </tal:block>
+  <div metal:use-macro="context/global_statusmessage/macros/portal_message">
+    Portal status message
   </div>
 
-  <!-- LDAP Inspector -->
-  <div class="modal" id="ldap-inspector" tabindex="-1">
-    <div class="modal-dialog modal-xl">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">LDAP Child Inspector</h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+  <form method="post" class="senaite-ldap-form mt-3"
+        tal:attributes="action string:${context/absolute_url}/@@plone_ldapcontrolpanel">
+
+    <!-- ============== Server ============== -->
+    <fieldset class="card mb-3">
+      <legend class="card-header h5" i18n:translate="">LDAP Server</legend>
+      <div class="card-body">
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Connection URI</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control" name="server.uri"
+                   tal:attributes="value server/uri" />
+            <small class="form-text text-muted"
+                   i18n:translate="">
+              Example: ldap://127.0.0.1:389 or ldaps://ad.example.com:636
+            </small>
+          </div>
         </div>
-        <div class="modal-body">
-          Loading ...
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Anonymous bind</label>
+          <div class="col-sm-9">
+            <input type="checkbox" name="server.anonymous" value="1"
+                   tal:attributes="checked python:server['anonymous'] and 'checked' or None" />
+          </div>
         </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Manager DN</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control" name="server.user"
+                   tal:attributes="value server/user" />
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Manager password</label>
+          <div class="col-sm-9">
+            <input type="password" class="form-control" name="server.password"
+                   placeholder="(unchanged)" autocomplete="new-password" />
+            <small class="form-text text-muted"
+                   i18n:translate="">
+              Leave blank to keep the currently stored password.
+            </small>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Ignore TLS/SSL certificate errors</label>
+          <div class="col-sm-9">
+            <input type="checkbox" name="server.ignore_cert" value="1"
+                   tal:attributes="checked python:server['ignore_cert'] and 'checked' or None" />
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Connection timeout (seconds)</label>
+          <div class="col-sm-9">
+            <input type="number" min="0" class="form-control"
+                   name="server.conn_timeout"
+                   tal:attributes="value server/conn_timeout" />
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Operation timeout (seconds)</label>
+          <div class="col-sm-9">
+            <input type="number" min="0" class="form-control"
+                   name="server.op_timeout"
+                   tal:attributes="value server/op_timeout" />
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Page size</label>
+          <div class="col-sm-9">
+            <input type="number" min="1" class="form-control"
+                   name="server.page_size"
+                   tal:attributes="value server/page_size" />
+            <small class="form-text text-muted"
+                   i18n:translate="">
+              Maximum number of entries returned per LDAP page. Set to a
+              low value (or 1) if your server does not support paged
+              results.
+            </small>
+          </div>
+        </div>
+
       </div>
+    </fieldset>
+
+    <!-- ============== Users ============== -->
+    <fieldset class="card mb-3">
+      <legend class="card-header h5" i18n:translate="">Users</legend>
+      <div class="card-body">
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Users base DN</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control" name="users.baseDN"
+                   tal:attributes="value users/baseDN" />
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Search scope</label>
+          <div class="col-sm-9">
+            <select class="form-control" name="users.scope">
+              <option tal:repeat="choice scope_choices"
+                      tal:attributes="value python:choice[0];
+                                      selected python:choice[0] == users['scope'] and 'selected' or None"
+                      tal:content="python:choice[1]">SUBTREE</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Query filter</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control" name="users.queryFilter"
+                   tal:attributes="value users/queryFilter" />
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Object classes</label>
+          <div class="col-sm-9">
+            <textarea class="form-control" rows="3" name="users.objectClasses"
+                      tal:content="users/objectClasses">inetOrgPerson</textarea>
+            <small class="form-text text-muted"
+                   i18n:translate="">One per line.</small>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">memberOf supported</label>
+          <div class="col-sm-9">
+            <input type="checkbox" name="users.memberOfSupport" value="1"
+                   tal:attributes="checked python:users['memberOfSupport'] and 'checked' or None" />
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Recursive / nested groups</label>
+          <div class="col-sm-9">
+            <input type="checkbox" name="users.recursiveGroups" value="1"
+                   tal:attributes="checked python:users['recursiveGroups'] and 'checked' or None" />
+            <small class="form-text text-muted"
+                   i18n:translate="">
+              Uses LDAP_MATCHING_RULE_IN_CHAIN. Typically AD-only.
+            </small>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">memberOf external group DNs</label>
+          <div class="col-sm-9">
+            <textarea class="form-control" rows="3"
+                      name="users.memberOfExternalGroupDNs"
+                      tal:content="users/memberOfExternalGroupDNs"></textarea>
+            <small class="form-text text-muted"
+                   i18n:translate="">
+              Group DNs outside the configured groups base DN are
+              ignored except for those listed here. One per line.
+            </small>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">User accounts can expire</label>
+          <div class="col-sm-9">
+            <input type="checkbox" name="users.account_expiration" value="1"
+                   tal:attributes="checked python:users['account_expiration'] and 'checked' or None" />
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Expiration attribute</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control" name="users.expiresAttr"
+                   tal:attributes="value users/expiresAttr" />
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Expiration unit</label>
+          <div class="col-sm-9">
+            <select class="form-control" name="users.expiresUnit">
+              <option tal:repeat="choice expires_units"
+                      tal:attributes="value python:choice[0];
+                                      selected python:choice[0] == users['expiresUnit'] and 'selected' or None"
+                      tal:content="python:choice[1]">Days since epoch</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Attribute map</label>
+          <div class="col-sm-9">
+            <textarea class="form-control text-monospace" rows="8"
+                      name="users.attrmap"
+                      tal:content="users/attrmap">id=uid
+login=uid</textarea>
+            <small class="form-text text-muted"
+                   i18n:translate="">
+              One `key=value` mapping per line. Reserved keys: `id`,
+              `login`, `rdn` (and `groups` when memberOf is enabled).
+              Property-sheet attribute mappings go in the same list.
+            </small>
+          </div>
+        </div>
+
+      </div>
+    </fieldset>
+
+    <!-- ============== Groups ============== -->
+    <fieldset class="card mb-3">
+      <legend class="card-header h5" i18n:translate="">Groups</legend>
+      <div class="card-body">
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Groups base DN</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control" name="groups.baseDN"
+                   tal:attributes="value groups/baseDN" />
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Search scope</label>
+          <div class="col-sm-9">
+            <select class="form-control" name="groups.scope">
+              <option tal:repeat="choice scope_choices"
+                      tal:attributes="value python:choice[0];
+                                      selected python:choice[0] == groups['scope'] and 'selected' or None"
+                      tal:content="python:choice[1]">SUBTREE</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Query filter</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control" name="groups.queryFilter"
+                   tal:attributes="value groups/queryFilter" />
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Object classes</label>
+          <div class="col-sm-9">
+            <textarea class="form-control" rows="3" name="groups.objectClasses"
+                      tal:content="groups/objectClasses">groupOfNames</textarea>
+            <small class="form-text text-muted"
+                   i18n:translate="">
+              One per line. One of these is mandatory: groupOfNames,
+              groupOfUniqueNames, posixGroup, group.
+            </small>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">memberOf supported</label>
+          <div class="col-sm-9">
+            <input type="checkbox" name="groups.memberOfSupport" value="1"
+                   tal:attributes="checked python:groups['memberOfSupport'] and 'checked' or None" />
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Attribute map</label>
+          <div class="col-sm-9">
+            <textarea class="form-control text-monospace" rows="6"
+                      name="groups.attrmap"
+                      tal:content="groups/attrmap"></textarea>
+            <small class="form-text text-muted"
+                   i18n:translate="">
+              One `key=value` mapping per line. Reserved keys: `id`,
+              `rdn`.
+            </small>
+          </div>
+        </div>
+
+      </div>
+    </fieldset>
+
+    <!-- ============== Cache ============== -->
+    <fieldset class="card mb-3">
+      <legend class="card-header h5" i18n:translate="">Cache</legend>
+      <div class="card-body">
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Cache LDAP queries</label>
+          <div class="col-sm-9">
+            <input type="checkbox" name="cache.cache" value="1"
+                   tal:attributes="checked python:cache['cache'] and 'checked' or None" />
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Memcached server</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control" name="cache.memcached"
+                   tal:attributes="value cache/memcached" />
+            <small class="form-text text-muted"
+                   i18n:translate="">
+              Global across all LDAP plugins. Leave empty to use the
+              local in-memory cache.
+            </small>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label class="col-sm-3 col-form-label"
+                 i18n:translate="">Cache timeout (seconds)</label>
+          <div class="col-sm-9">
+            <input type="number" min="0" class="form-control"
+                   name="cache.timeout"
+                   tal:attributes="value cache/timeout" />
+          </div>
+        </div>
+
+      </div>
+    </fieldset>
+
+    <!-- ============== Actions ============== -->
+    <div class="d-flex mb-4">
+      <button type="submit" name="form.action" value="save"
+              class="btn btn-primary mr-2"
+              i18n:translate="">Save</button>
+      <button type="submit" name="form.action" value="test"
+              class="btn btn-outline-secondary"
+              i18n:translate="">Test connection</button>
     </div>
-  </div>
 
-  <h2>Settings</h2>
-
-  <tal:form replace="structure python:view.form()" />
-
-  <script type="text/javascript">
-   $(document).ready(function () {
-     $("#ldap-inspector").on("show.bs.modal", function (e) {
-       var modal = $(this);
-       var url = e.relatedTarget.href;
-
-       // Load content via AJAX
-       $.ajax({
-         url: url,
-         type: "GET",
-         success: function (data) {
-           var parsedHTML = $('<div>').html(data);
-           var content = parsedHTML.find('#portal-column-content').html();
-           modal.find(".modal-body").html(content || '<p class="text-danger">Content not found.</p>');
-         },
-         error: function () {
-           modal.find(".modal-body").html("<p class='text-danger'>Failed to load content.</p>");
-         }
-       });
-     });
-   });
-  </script>
-
+  </form>
 
 </metal:main>
 
