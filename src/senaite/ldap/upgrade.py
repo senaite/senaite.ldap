@@ -21,6 +21,12 @@ def upgrade_1100_to_2000(setup_tool):
 
     What this step does:
 
+    - Re-import the senaite.ldap controlpanel profile so the
+      "LDAP / Active Directory" entry appears in Site Setup. The 1.x
+      configlet was registered by
+      ``pas.plugins.ldap.plonecontrolpanel``, which we no longer
+      install; without re-importing here the configlet would silently
+      disappear on upgrade.
     - Remove orphan `yafowil` / `plone.bundles/yafowil` registry
       records left by the upstream profile.
     - Leave the `pasldap` PAS plugin and its persistent
@@ -28,7 +34,18 @@ def upgrade_1100_to_2000(setup_tool):
       configuration untouched.
     """
     portal = setup_tool.aq_inner.aq_parent
+    import_controlpanel(setup_tool)
     drop_yafowil_registry_records(portal)
+
+
+def import_controlpanel(setup_tool):
+    """Re-import the ``controlpanel`` GenericSetup step from the
+    senaite.ldap default profile so the configlet entry is registered
+    (and so the title / URL update if we ever change them).
+    """
+    setup_tool.runImportStepFromProfile(
+        "profile-senaite.ldap:default", "controlpanel")
+    logger.info("Re-imported senaite.ldap controlpanel profile")
 
 
 def drop_yafowil_registry_records(portal):
