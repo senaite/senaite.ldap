@@ -260,3 +260,71 @@ class LDAPDiscoverGroupsView(_DiscoveryBase):
             "filter": filter_expr,
             "groups": out,
         })
+
+
+class LDAPDiscoverNamingContextsView(_DiscoveryBase):
+    """JSON: read the rootDSE's ``namingContexts`` attribute.
+
+    Anonymous (or bound) search at ``base=""`` ``scope=BASE`` for
+    ``(objectClass=*)``. Every LDAP-conformant server publishes the
+    list of root naming contexts it serves there. Used to offer the
+    user a starting point for Users / Groups Base DN fields.
+    """
+
+    def __call__(self):
+        self._require_plugin()
+        self.request.response.setHeader(
+            "Content-Type", "application/json")
+
+        try:
+            from node.ext.ldap.session import LDAPSession
+            from node.ext.ldap.scope import BASE
+            session = LDAPSession(self.props)
+            results = session.search(
+                queryFilter=u"(objectClass=*)",
+                scope=BASE,
+                baseDN=u"",
+                attrlist=[u"namingContexts"],
+            )
+        except Exception as exc:
+            logger.warn("namingContexts lookup failed: %s", exc)
+            return json.dumps({
+                "ok": False,
+                "error": str(exc),
+                "naming_contexts": [],
+            })
+
+        contexts = set()
+        for entry in results:
+            if not entry or len(entry) != 2:
+                continue
+            _dn, attrs = entry
+            for key in (u"namingContexts", b"namingContexts"):
+                value = attrs.get(key)
+                if not value:
+                    continue
+                if isinstance(value, (bytes, str)):
+                    value = [value]
+                for nc in value:
+                    contexts.add(_safe_unicode(nc))
+                break
+
+        # Fallback: some servers (LLDAP) don't publish namingContexts
+        # on the rootDSE. Derive a sensible candidate from the bind
+        # DN's dc= suffix.
+        fallback_used = False
+        if not contexts:
+            bind_dn = _safe_unicode(getattr(self.props, "user", "") or "")
+            dc_suffix = u",".join(
+                part.strip() for part in bind_dn.split(u",")
+                if part.strip().lower().startswith(u"dc=")
+            )
+            if dc_suffix:
+                contexts.add(dc_suffix)
+                fallback_used = True
+
+        return json.dumps({
+            "ok": True,
+            "naming_contexts": sorted(contexts),
+            "fallback": fallback_used,
+        })

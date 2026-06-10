@@ -23,6 +23,13 @@
       width: 100%;
       max-width: 100%;
     }
+    /* Re-enable Bootstrap's input-group flex sizing — without this
+       our 100%-width rule pushes the button onto a new line. */
+    .senaite-ldap-form .input-group > .form-control,
+    .senaite-ldap-form .input-group > .form-control-lg {
+      flex: 1 1 auto;
+      width: 1%;
+    }
     .senaite-ldap-form .form-control.text-monospace {
       font-size: 0.95rem;
     }
@@ -47,6 +54,20 @@
     .senaite-ldap-form .helptext {
       font-size: 0.85rem;
     }
+    /* Connection-status dot on the Server tab. */
+    .senaite-ldap-form .conn-dot {
+      display: inline-block;
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 50%;
+      margin-right: 0.4rem;
+      vertical-align: middle;
+      background: #d1d5db;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.1) inset;
+    }
+    .senaite-ldap-form .conn-dot.is-on  { background: #22c55e; }
+    .senaite-ldap-form .conn-dot.is-bad { background: #ef4444; }
+    .senaite-ldap-form .conn-dot.is-off { background: #d1d5db; }
     /* LDAP search */
     .senaite-ldap-form .result-row { cursor: pointer; }
     .senaite-ldap-form .result-row.is-open { background: #eef4ff; }
@@ -88,48 +109,18 @@
 
   <div class="senaite-ldap-form">
 
-  <!-- Compact status header -->
-  <div class="card bg-light mb-3"
-       tal:define="connected python:bool(server['uri'])">
-    <div class="card-body py-2 d-flex align-items-center">
-      <div class="flex-grow-1 mr-3">
-        <small class="text-muted text-uppercase"
-               i18n:translate="">Target</small>
-        <div tal:condition="connected"
-             tal:content="server/uri"
-             class="font-weight-bold text-monospace">
-          ldaps://example.com:636
-        </div>
-        <div tal:condition="not:connected"
-             class="text-muted font-italic"
-             i18n:translate="">No connection URI configured</div>
-        <small class="text-muted">
-          <tal:b tal:condition="server/anonymous"
-                 i18n:translate="">Anonymous bind</tal:b>
-          <tal:b tal:condition="not:server/anonymous">
-            <span i18n:translate="">Bind DN:</span>
-            <code class="text-dark"
-                  tal:content="server/user">cn=manager,dc=…</code>
-          </tal:b>
-        </small>
-      </div>
-      <form method="post" class="mb-0"
-            tal:attributes="action string:${context/absolute_url}/@@senaite_ldapcontrolpanel">
-        <button type="submit" name="form.action" value="test"
-                class="btn btn-sm btn-outline-secondary"
-                tal:attributes="disabled python:not connected and 'disabled' or None"
-                i18n:translate="">Test connection</button>
-      </form>
-    </div>
-  </div>
-
   <form method="post" id="ldap-settings-form"
         tal:attributes="action string:${context/absolute_url}/@@senaite_ldapcontrolpanel">
 
-    <ul class="nav nav-tabs" role="tablist">
+    <ul class="nav nav-tabs"
+        tal:define="connected python:bool(server['uri'])"
+        role="tablist">
       <li class="nav-item">
-        <a class="nav-link active" data-toggle="tab" href="#tab-server" role="tab"
-           i18n:translate="">Server</a>
+        <a class="nav-link active" data-toggle="tab" href="#tab-server" role="tab">
+          <span class="conn-dot"
+                tal:attributes="class python:'conn-dot ' + (connected and 'is-on' or 'is-off')"></span>
+          <span i18n:translate="">Server</span>
+        </a>
       </li>
       <li class="nav-item">
         <a class="nav-link" data-toggle="tab" href="#tab-users" role="tab"
@@ -154,6 +145,12 @@
       <!-- ============== Server ============== -->
       <div class="tab-pane fade show active" id="tab-server" role="tabpanel">
         <div class="field-row">
+
+          <div class="form-group d-flex justify-content-end">
+            <button type="submit" name="form.action" value="test"
+                    class="btn btn-sm btn-outline-secondary"
+                    i18n:translate="">Test connection</button>
+          </div>
 
           <div class="form-group">
             <label for="f-server-uri" i18n:translate="">Connection URI</label>
@@ -280,11 +277,23 @@
 
           <div class="form-group">
             <label for="f-users-basedn" i18n:translate="">Base DN</label>
-            <input id="f-users-basedn" type="text"
-                   class="form-control form-control-lg text-monospace"
-                   name="users.baseDN"
-                   placeholder="ou=people,dc=example,dc=com"
-                   tal:attributes="value users/baseDN" />
+            <div class="input-group">
+              <input id="f-users-basedn" type="text"
+                     class="form-control form-control-lg text-monospace"
+                     name="users.baseDN"
+                     placeholder="ou=people,dc=example,dc=com"
+                     tal:attributes="value users/baseDN" />
+              <div class="input-group-append">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        data-action="detect-basedn"
+                        data-target="f-users-basedn"
+                        data-suggest-prefix="ou=people"
+                        i18n:translate="">Detect</button>
+              </div>
+            </div>
+            <small class="form-text text-muted helptext"
+                   data-status="f-users-basedn-status"></small>
           </div>
 
           <div class="form-group">
@@ -387,17 +396,37 @@
           </div>
 
           <div class="form-group">
-            <label for="f-users-extgroups"
+            <label for="f-users-extgroups-picker"
                    i18n:translate="">memberOf external group DNs</label>
-            <textarea id="f-users-extgroups"
-                      class="form-control text-monospace" rows="3"
-                      name="users.memberOfExternalGroupDNs"
-                      tal:content="users/memberOfExternalGroupDNs"></textarea>
-            <small class="form-text text-muted helptext"
-                   i18n:translate="">
-              Group DNs outside the configured groups base DN are
-              ignored except for those listed here. One per line.
-            </small>
+            <div class="picker-and-textarea">
+              <select id="f-users-extgroups-picker"
+                      class="form-control picker"
+                      multiple="multiple"
+                      data-target="f-users-extgroups"
+                      size="6"></select>
+              <div class="d-flex align-items-center mt-1">
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary mr-2"
+                        data-action="discover-groups"
+                        data-picker="f-users-extgroups-picker"
+                        i18n:translate="">Refresh from server</button>
+                <small class="text-muted helptext"
+                       data-status="f-users-extgroups-status"></small>
+              </div>
+              <textarea id="f-users-extgroups"
+                        class="form-control text-monospace mt-2 d-none" rows="3"
+                        name="users.memberOfExternalGroupDNs"
+                        tal:content="users/memberOfExternalGroupDNs"></textarea>
+              <small class="form-text text-muted helptext mt-1"
+                     i18n:translate="">
+                Group DNs outside the configured Groups Base DN are
+                ignored except for those listed here. Pick from the
+                discovered groups, or
+                <a href="#" class="reveal-textarea"
+                   data-target="f-users-extgroups"
+                   i18n:translate="">edit raw</a>.
+              </small>
+            </div>
           </div>
 
           <h6 class="section-heading"
@@ -465,11 +494,23 @@ fullname=cn</textarea>
 
           <div class="form-group">
             <label for="f-groups-basedn" i18n:translate="">Base DN</label>
-            <input id="f-groups-basedn" type="text"
-                   class="form-control form-control-lg text-monospace"
-                   name="groups.baseDN"
-                   placeholder="ou=groups,dc=example,dc=com"
-                   tal:attributes="value groups/baseDN" />
+            <div class="input-group">
+              <input id="f-groups-basedn" type="text"
+                     class="form-control form-control-lg text-monospace"
+                     name="groups.baseDN"
+                     placeholder="ou=groups,dc=example,dc=com"
+                     tal:attributes="value groups/baseDN" />
+              <div class="input-group-append">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        data-action="detect-basedn"
+                        data-target="f-groups-basedn"
+                        data-suggest-prefix="ou=groups"
+                        i18n:translate="">Detect</button>
+              </div>
+            </div>
+            <small class="form-text text-muted helptext"
+                   data-status="f-groups-basedn-status"></small>
           </div>
 
           <div class="form-group">
@@ -809,27 +850,146 @@ fullname=cn</textarea>
         });
       }
 
-      // Wire up the two pickers.
-      ["f-users-oc-picker", "f-groups-oc-picker"].forEach(function (id) {
+      // Wire up the pickers.
+      ["f-users-oc-picker", "f-groups-oc-picker",
+       "f-users-extgroups-picker"].forEach(function (id) {
         var picker = document.getElementById(id);
         if (picker) initPicker(picker);
       });
 
-      // Wire up "Refresh from server" buttons.
+      function findStatus(picker) {
+        var statusId = picker.id.replace(/-picker$/, "-status");
+        return document.querySelector(
+          "[data-status='" + statusId + "']");
+      }
+
+      // Object-class discovery.
       document.querySelectorAll("[data-action='discover-oc']")
         .forEach(function (btn) {
           btn.addEventListener("click", function () {
             var picker = document.getElementById(
               btn.getAttribute("data-picker"));
             if (!picker) return;
-            // data-status="f-users-oc-status" matches picker
-            // "f-users-oc-picker" by replacing -picker with -status.
-            var statusId = picker.id.replace(/-picker$/, "-status");
-            var status = document.querySelector(
-              "[data-status='" + statusId + "']");
+            var status = findStatus(picker);
             if (status) discover(picker, status);
           });
         });
+
+      // Group discovery: populates the memberOfExternalGroupDNs picker
+      // with available group DNs from the configured Groups base.
+      function discoverGroups(picker, statusEl) {
+        statusEl.textContent = "Loading groups…";
+        fetch(BASE_URL + "/@@senaite_ldapdiscover_groups",
+              { credentials: "same-origin" })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data.ok) {
+              statusEl.textContent =
+                "Group discovery failed: " + data.error;
+              return;
+            }
+            var targetId = picker.getAttribute("data-target");
+            var current = parseLines(textareaValue(targetId));
+            var dns = data.groups.map(function (g) { return g.dn; });
+            populatePicker(picker, dns, current);
+            // Replace plain DN labels with "cn  ─  dn" for clarity.
+            var cnByDn = {};
+            data.groups.forEach(function (g) {
+              cnByDn[g.dn] = g.cn;
+            });
+            Array.from(picker.options).forEach(function (opt) {
+              var cn = cnByDn[opt.value];
+              if (cn) opt.textContent = cn + "  —  " + opt.value;
+            });
+            var truncated = data.truncated ? " (truncated)" : "";
+            statusEl.textContent =
+              "Found " + data.count + " group(s)" + truncated;
+          })
+          .catch(function (err) {
+            statusEl.textContent = "Group discovery failed: " + err;
+          });
+      }
+
+      document.querySelectorAll("[data-action='discover-groups']")
+        .forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var picker = document.getElementById(
+              btn.getAttribute("data-picker"));
+            if (!picker) return;
+            var status = findStatus(picker);
+            if (status) discoverGroups(picker, status);
+          });
+        });
+
+      // Base-DN detection: read rootDSE namingContexts.
+      document.querySelectorAll("[data-action='detect-basedn']")
+        .forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var targetId = btn.getAttribute("data-target");
+            var prefix = btn.getAttribute("data-suggest-prefix") || "";
+            var input = document.getElementById(targetId);
+            var status = document.querySelector(
+              "[data-status='" + targetId + "-status']");
+            if (!input) return;
+            if (status) status.textContent = "Detecting…";
+
+            fetch(BASE_URL +
+                  "/@@senaite_ldapdiscover_naming_contexts",
+                  { credentials: "same-origin" })
+              .then(function (r) { return r.json(); })
+              .then(function (data) {
+                if (!data.ok) {
+                  if (status) {
+                    status.textContent = "Detection failed: " +
+                                         data.error;
+                  }
+                  return;
+                }
+                var ncs = data.naming_contexts || [];
+                if (ncs.length === 0) {
+                  if (status) {
+                    status.textContent =
+                      "No namingContexts published by the server.";
+                  }
+                  return;
+                }
+                // Suggest "<prefix>,<naming-context>" if a prefix is
+                // configured (e.g. "ou=people" for the Users field),
+                // otherwise just the naming context itself.
+                var suggested = prefix
+                  ? prefix + "," + ncs[0]
+                  : ncs[0];
+                input.value = suggested;
+                input.dispatchEvent(new Event("input"));
+                if (status) {
+                  status.textContent =
+                    "Set to " + suggested + ". Found " + ncs.length +
+                    " naming context(s).";
+                }
+              })
+              .catch(function (err) {
+                if (status) {
+                  status.textContent = "Detection failed: " + err;
+                }
+              });
+          });
+        });
+
+      // Mirror Users → Groups: when the Groups base DN is empty and
+      // the Users base DN is filled, derive a sensible Groups base
+      // by replacing "ou=people" with "ou=groups".
+      (function () {
+        var usersInput = document.getElementById("f-users-basedn");
+        var groupsInput = document.getElementById("f-groups-basedn");
+        if (!usersInput || !groupsInput) return;
+        usersInput.addEventListener("blur", function () {
+          if (groupsInput.value.trim()) return;
+          var u = usersInput.value.trim();
+          if (!u) return;
+          var suggested = u.replace(/^ou=people,/i, "ou=groups,");
+          if (suggested !== u) groupsInput.value = suggested;
+        });
+      })();
 
       // "edit raw" links: reveal the underlying textarea.
       document.querySelectorAll("a.reveal-textarea")
