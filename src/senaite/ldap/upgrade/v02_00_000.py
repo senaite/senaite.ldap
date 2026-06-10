@@ -16,6 +16,7 @@ from senaite.core.upgrade import upgradestep
 from senaite.core.upgrade.utils import UpgradeUtils
 from senaite.ldap import logger
 from senaite.ldap import PRODUCT_NAME
+from senaite.ldap.setuphandlers import deactivate_user_adder
 from senaite.ldap.setuphandlers import REGISTRY_KEYS
 
 
@@ -61,6 +62,14 @@ def upgrade(tool):
        Deliberately-set values (real scope choice, non-empty
        objectClasses) are left alone. Idempotent.
 
+    4. Deactivate the ``IUserAdderPlugin`` interface on the ``pasldap``
+       plugin. ``pas.plugins.ldap``'s ``doAddUser`` is a stub that
+       always returns False, so the active checkbox in the ZMI
+       Activate tab is misleading. Deactivating it lets the Plone
+       "add user" form fall straight through to the local user store
+       and stops the UI advertising LDAP user creation that does not
+       actually work.
+
     :param tool: The portal_setup tool.
     """
     portal = tool.aq_inner.aq_parent
@@ -78,6 +87,7 @@ def upgrade(tool):
     import_controlpanel(tool)
     drop_yafowil_registry_records(portal)
     apply_sane_pasldap_defaults(portal)
+    deactivate_user_adder(portal)
 
     logger.info("{0} upgraded to version {1}".format(
         PRODUCT_NAME, version))
