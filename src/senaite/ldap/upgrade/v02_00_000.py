@@ -17,6 +17,7 @@ from senaite.core.upgrade.utils import UpgradeUtils
 from senaite.ldap import logger
 from senaite.ldap import PRODUCT_NAME
 from senaite.ldap.setuphandlers import deactivate_user_adder
+from senaite.ldap.setuphandlers import install_pas_plugin
 from senaite.ldap.setuphandlers import REGISTRY_KEYS
 
 
@@ -62,13 +63,23 @@ def upgrade(tool):
        Deliberately-set values (real scope choice, non-empty
        objectClasses) are left alone. Idempotent.
 
-    4. Deactivate the ``IUserAdderPlugin`` interface on the ``pasldap``
-       plugin. ``pas.plugins.ldap``'s ``doAddUser`` is a stub that
-       always returns False, so the active checkbox in the ZMI
-       Activate tab is misleading. Deactivating it lets the Plone
-       "add user" form fall straight through to the local user store
-       and stops the UI advertising LDAP user creation that does not
-       actually work.
+    4. Migrate the persisted ``pasldap`` instance from
+       ``pas.plugins.ldap.plugin.LDAPPlugin`` to the vendored
+       ``senaite.ldap.pas.plugin.LDAPPlugin``: snapshot
+       ``settings`` + ``plugin_caching`` + the set of currently
+       activated PAS interfaces, delete and recreate under the
+       same id, then restore state. The opinionated defaults from
+       step 3 are written before the swap and therefore carried
+       across. Idempotent (no-op when the instance is already on
+       our class).
+
+    5. Deactivate the ``IUserAdderPlugin`` interface on the
+       ``pasldap`` plugin. ``doAddUser`` is a stub that always
+       returns False, so the active checkbox in the ZMI Activate
+       tab is misleading. Deactivating it lets the Plone
+       "add user" form fall straight through to the local user
+       store. Runs after step 4 so it operates on the new
+       instance's active interface list.
 
     :param tool: The portal_setup tool.
     """
@@ -87,6 +98,7 @@ def upgrade(tool):
     import_controlpanel(tool)
     drop_yafowil_registry_records(portal)
     apply_sane_pasldap_defaults(portal)
+    install_pas_plugin(portal)
     deactivate_user_adder(portal)
 
     logger.info("{0} upgraded to version {1}".format(
