@@ -13,7 +13,7 @@
                    actually resolves users and groups."
       source="1100"
       destination="2000"
-      handler=".upgrade.upgrade_1100_to_2000"
+      handler=".v02_00_000.upgrade"
       profile="senaite.ldap:default"/>
 
 </configure>
