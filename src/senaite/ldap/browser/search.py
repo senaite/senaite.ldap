@@ -142,9 +142,9 @@ class LDAPSearchResultsView(_LDAPSearchBase):
 
         try:
             node = LDAPNode(base_dn, self.props)
+            node.search_scope = scope
             dns = node.search(
                 queryFilter=query_filter,
-                scope=scope,
             )
         except Exception as exc:
             logger.warn(

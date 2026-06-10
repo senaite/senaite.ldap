@@ -128,9 +128,9 @@ class LDAPDiscoverObjectClassesView(_DiscoveryBase):
 
         try:
             node = LDAPNode(base_dn, self.props)
+            node.search_scope = SUBTREE
             results = node.search(
                 queryFilter=u"(objectClass=*)",
-                scope=SUBTREE,
                 attrlist=[u"objectClass"],
             )
         except Exception as exc:
@@ -225,9 +225,9 @@ class LDAPDiscoverGroupsView(_DiscoveryBase):
 
         try:
             node = LDAPNode(base_dn, self.props)
+            node.search_scope = SUBTREE
             dns = node.search(
                 queryFilter=filter_expr,
-                scope=SUBTREE,
             )
         except Exception as exc:
             logger.warn(
