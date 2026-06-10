@@ -394,6 +394,10 @@
 
       for (var i = 0; i < data.dns.length; i++) {
         var dn = data.dns[i];
+        // Defensive: if the server slipped a (dn, attrs) tuple
+        // through, JSON-encodes it as an array — pick the DN element
+        // so textContent doesn't render ",[object Object]".
+        if (Array.isArray(dn)) dn = String(dn[0] != null ? dn[0] : "");
         var tr = document.createElement("tr");
         tr.className = "result-row";
         tr.setAttribute("data-dn", dn);
