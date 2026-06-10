@@ -41,3 +41,32 @@ def initialize(context):
     logger.info("*** Initializing SENAITE.LDAP package ***")
     from senaite.ldap.patches import apply_patches
     apply_patches()
+    _register_pas_plugin(context)
+
+
+def _register_pas_plugin(context):
+    """Register the vendored `LDAPPlugin` with PAS.
+
+    Done at Zope startup so the class shows up in
+    ``manage_addProduct/PluggableAuthService`` and so PAS knows the
+    class as a `MultiPlugin`. No plugin instances are created here;
+    that's still the job of the setup handler / upgrade step.
+    """
+    from AccessControl.Permissions import add_user_folders
+    from Products.PluggableAuthService import registerMultiPlugin
+    from senaite.ldap.plugin import LDAPPlugin
+    from senaite.ldap.plugin import manage_addLDAPPlugin
+
+    try:
+        registerMultiPlugin(LDAPPlugin.meta_type)
+    except RuntimeError:
+        # Idempotent: registerMultiPlugin raises if the meta_type
+        # is already registered (e.g. Zope re-initialising on
+        # restart in --foreground).
+        pass
+    context.registerClass(
+        LDAPPlugin,
+        permission=add_user_folders,
+        constructors=(manage_addLDAPPlugin,),
+        visibility=None,
+    )

@@ -15,6 +15,17 @@
   <!-- Package includes -->
   <include package=".browser" />
 
+  <!-- Vendored LDAP PAS plugin adapters / utility.
+       These wire ILDAPProps / ILDAPUsersConfig / ILDAPGroupsConfig
+       for instances of senaite.ldap.plugin.LDAPPlugin. Upstream
+       pas.plugins.ldap keeps its own registrations for instances of
+       its own class; the two coexist because our marker interface
+       senaite.ldap.plugin_interfaces.ILDAPPlugin is a distinct
+       identity from upstream's. -->
+  <adapter factory=".plugin_properties.LDAPProps" />
+  <adapter factory=".plugin_properties.UsersConfig" />
+  <adapter factory=".plugin_properties.GroupsConfig" />
+
   <!-- Upgrade steps -->
   <include package=".upgrade" />
 
