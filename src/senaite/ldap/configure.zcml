@@ -16,7 +16,7 @@
   <include package=".browser" />
 
   <!-- Upgrade steps -->
-  <include file="upgrades.zcml" />
+  <include package=".upgrade" />
 
   <!-- Default Profile -->
   <genericsetup:registerProfile
