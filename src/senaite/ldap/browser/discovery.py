@@ -51,6 +51,42 @@ def _safe_unicode(value):
     return safe_unicode(value)
 
 
+def _extract_object_classes(attrs):
+    """Yield objectClass values from an attrs payload regardless of
+    case or container shape.
+
+    LDAP attribute names are case-insensitive in the protocol but
+    Python dict lookups aren't, and the underlying library may
+    return the dict keyed differently across servers (``objectClass``
+    vs ``objectclass`` vs bytes). Iterate keys and pick whichever
+    one matches case-insensitively.
+    """
+    if not attrs:
+        return []
+    try:
+        items = attrs.items()
+    except AttributeError:
+        # node.ext.ldap node.attrs sometimes behaves like a dict via
+        # __getitem__/__iter__ without exposing items(); fall back.
+        items = ((k, attrs[k]) for k in attrs)
+    for key, value in items:
+        try:
+            key_s = key.decode("utf-8") if isinstance(key, bytes) else key
+        except UnicodeDecodeError:
+            continue
+        if key_s.lower() != u"objectclass":
+            continue
+        if value is None:
+            continue
+        if isinstance(value, (bytes, str)):
+            return [value]
+        try:
+            return list(value)
+        except TypeError:
+            return [value]
+    return []
+
+
 def _cn_from_dn(dn):
     """Extract the leftmost RDN value (typically the CN) from a DN.
 
@@ -129,9 +165,12 @@ class LDAPDiscoverObjectClassesView(_DiscoveryBase):
         try:
             node = LDAPNode(base_dn, self.props)
             node.search_scope = SUBTREE
+            # Request both casings — LDAP attribute names are
+            # case-insensitive per spec but some servers return
+            # entries only when the requested name matches exactly.
             results = node.search(
                 queryFilter=u"(objectClass=*)",
-                attrlist=[u"objectClass"],
+                attrlist=[u"objectClass", u"objectclass"],
             )
         except Exception as exc:
             logger.warn(
@@ -150,7 +189,7 @@ class LDAPDiscoverObjectClassesView(_DiscoveryBase):
         for entry in results:
             if sampled >= SAMPLE_SIZE:
                 break
-            attrs = {}
+            attrs = None
             if isinstance(entry, tuple) and len(entry) == 2:
                 _dn, attrs = entry
             else:
@@ -159,13 +198,10 @@ class LDAPDiscoverObjectClassesView(_DiscoveryBase):
                 try:
                     child = node.node_by_dn(
                         _safe_unicode(entry), strict=True)
-                    attrs = {u"objectClass": child.attrs.get(u"objectClass")}
+                    attrs = child.attrs
                 except Exception:
                     continue
-            ocs = attrs.get(u"objectClass") or attrs.get(b"objectClass") or []
-            if isinstance(ocs, (bytes, str)):
-                ocs = [ocs]
-            for oc in ocs:
+            for oc in _extract_object_classes(attrs):
                 seen.add(_safe_unicode(oc))
             sampled += 1
 
