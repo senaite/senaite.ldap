@@ -15,8 +15,17 @@ Changelog
 - New live filter preview under each tab showing the LDAP filter
   the configured object classes + query filter will produce.
 - New discovery endpoint ``@@senaite_ldapdiscover_groups`` returning
-  groups under the Groups base DN (used by upcoming PRs that wire
-  group selection into the form).
+  groups under the Groups base DN.
+- *Detect* button next to both Users and Groups Base DN fields:
+  reads the LDAP server's rootDSE ``namingContexts`` and prefills
+  the field. New endpoint
+  ``@@senaite_ldapdiscover_naming_contexts``.
+- Auto-derive Groups Base DN from Users Base DN on blur: if Users
+  base is ``ou=people,…``, suggest ``ou=groups,…`` for Groups when
+  empty.
+- Groups multi-select picker on the Users tab. Populates the
+  ``memberOfExternalGroupDNs`` list by picking from the actual
+  groups under the Groups Base DN instead of typing DNs by hand.
 
 2.x replaces the YAFOWIL-based LDAP control panel with a native
 SENAITE form. The ``pas.plugins.ldap.plonecontrolpanel`` sub-package

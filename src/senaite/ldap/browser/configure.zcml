@@ -62,6 +62,15 @@
         layer="senaite.ldap.interfaces.ISenaiteLdap"
         />
 
+    <!-- Discovery JSON: rootDSE namingContexts -->
+    <browser:page
+        name="senaite_ldapdiscover_naming_contexts"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+        class=".discovery.LDAPDiscoverNamingContextsView"
+        permission="cmf.ManagePortal"
+        layer="senaite.ldap.interfaces.ISenaiteLdap"
+        />
+
     <!-- Static directory for js, css and image resources -->
     <plone:static
         directory="static"
