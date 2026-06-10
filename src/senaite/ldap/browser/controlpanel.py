@@ -43,6 +43,21 @@ EXPIRES_UNITS = (
 )
 
 
+def _to_text(value):
+    """Coerce a request value to ``unicode``.
+
+    The persistent registry-backed fields used by ``pas.plugins.ldap``
+    are typed as ``zope.schema.TextLine`` and reject ``str``. Request
+    values come in as ``str`` under Py2, so every textual field needs
+    to be normalised before being written.
+    """
+    if value is None:
+        return u""
+    if isinstance(value, bytes):
+        return value.decode("utf-8")
+    return value
+
+
 def _split_lines(value):
     """Parse a textarea value as a list of non-empty stripped lines."""
     if not value:
@@ -52,21 +67,28 @@ def _split_lines(value):
     return [line.strip() for line in value.splitlines() if line.strip()]
 
 
+def _to_text_list(value):
+    return [_to_text(v) for v in _split_lines(value)]
+
+
 def _parse_attrmap(value):
     """Parse a textarea value as ``key=value`` lines into an odict.
 
     Blank lines and lines without ``=`` are silently skipped.
+    Keys and values are normalised to ``unicode`` because the
+    persisted fields are typed as ``zope.schema.TextLine`` and reject
+    byte strings under Py2.
     """
     result = odict()
     for line in _split_lines(value):
         if "=" not in line:
             continue
-        key, _, val = line.partition("=")
+        key, _sep, val = line.partition("=")
         key = key.strip()
         val = val.strip()
         if not key:
             continue
-        result[key] = val
+        result[_to_text(key)] = _to_text(val)
     return result
 
 
@@ -229,18 +251,18 @@ class LDAPControlPanel(BrowserView):
         groups = self.groups
 
         # Server
-        props.uri = form.get("server.uri", "").strip()
+        props.uri = _to_text(form.get("server.uri", "").strip())
         anonymous = _to_bool(form.get("server.anonymous"))
         if anonymous:
-            props.user = ""
-            props.password = ""
+            props.user = u""
+            props.password = u""
         else:
-            props.user = form.get("server.user", "").strip()
+            props.user = _to_text(form.get("server.user", "").strip())
             password = form.get("server.password", "")
             # Don't wipe the stored password on an empty input — the
             # form never echoes the existing one.
             if password:
-                props.password = password
+                props.password = _to_text(password)
         props.ignore_cert = _to_bool(form.get("server.ignore_cert"))
         props.conn_timeout = _to_int(form.get("server.conn_timeout"), 0)
         props.op_timeout = _to_int(form.get("server.op_timeout"), 0)
@@ -248,11 +270,11 @@ class LDAPControlPanel(BrowserView):
 
         # Cache
         props.cache = _to_bool(form.get("cache.cache"))
-        props.memcached = form.get("cache.memcached", "").strip()
+        props.memcached = _to_text(form.get("cache.memcached", "").strip())
         props.timeout = _to_int(form.get("cache.timeout"), 0)
 
         # Users
-        users.baseDN = form.get("users.baseDN", "").strip()
+        users.baseDN = _to_text(form.get("users.baseDN", "").strip())
         users.attrmap = _parse_attrmap(form.get("users.attrmap", ""))
         # The principal id attribute must map to itself or LDAP lookups
         # break later on. Replicate the safeguard from upstream.
@@ -260,23 +282,27 @@ class LDAPControlPanel(BrowserView):
         if id_attr and id_attr not in users.attrmap:
             users.attrmap[id_attr] = id_attr
         users.scope = _to_int(form.get("users.scope"), SUBTREE)
-        users.queryFilter = form.get("users.queryFilter", "").strip()
-        users.objectClasses = _split_lines(form.get("users.objectClasses", ""))
+        users.queryFilter = _to_text(
+            form.get("users.queryFilter", "").strip())
+        users.objectClasses = _to_text_list(
+            form.get("users.objectClasses", ""))
         users.memberOfSupport = _to_bool(form.get("users.memberOfSupport"))
         users.recursiveGroups = _to_bool(form.get("users.recursiveGroups"))
-        users.memberOfExternalGroupDNs = _split_lines(
+        users.memberOfExternalGroupDNs = _to_text_list(
             form.get("users.memberOfExternalGroupDNs", ""))
         users.account_expiration = _to_bool(
             form.get("users.account_expiration"))
-        users._expiresAttr = form.get("users.expiresAttr", "").strip()
+        users._expiresAttr = _to_text(
+            form.get("users.expiresAttr", "").strip())
         users._expiresUnit = _to_int(form.get("users.expiresUnit"), 0)
 
         # Groups
-        groups.baseDN = form.get("groups.baseDN", "").strip()
+        groups.baseDN = _to_text(form.get("groups.baseDN", "").strip())
         groups.attrmap = _parse_attrmap(form.get("groups.attrmap", ""))
         groups.scope = _to_int(form.get("groups.scope"), SUBTREE)
-        groups.queryFilter = form.get("groups.queryFilter", "").strip()
-        groups.objectClasses = _split_lines(
+        groups.queryFilter = _to_text(
+            form.get("groups.queryFilter", "").strip())
+        groups.objectClasses = _to_text_list(
             form.get("groups.objectClasses", ""))
         groups.memberOfSupport = _to_bool(
             form.get("groups.memberOfSupport"))
