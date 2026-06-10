@@ -262,6 +262,34 @@ class LDAPDiscoverGroupsView(_DiscoveryBase):
         })
 
 
+class LDAPStatusView(_DiscoveryBase):
+    """JSON: live connectivity probe.
+
+    Runs ``LDAPSession.checkServerProperties`` and reports
+    ``{ok, message}``. Called by the control-panel JS on page load
+    to colour the *Server* tab's connection dot.
+    """
+
+    def __call__(self):
+        self._require_plugin()
+        self.request.response.setHeader(
+            "Content-Type", "application/json")
+
+        from node.ext.ldap.session import LDAPSession
+        try:
+            session = LDAPSession(self.props)
+            ok, message = session.checkServerProperties()
+            return json.dumps({
+                "ok": bool(ok),
+                "message": _safe_unicode(message),
+            })
+        except Exception as exc:
+            return json.dumps({
+                "ok": False,
+                "message": _safe_unicode(str(exc)),
+            })
+
+
 class LDAPDiscoverNamingContextsView(_DiscoveryBase):
     """JSON: read the rootDSE's ``namingContexts`` attribute.
 

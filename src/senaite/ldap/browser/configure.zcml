@@ -71,6 +71,16 @@
         layer="senaite.ldap.interfaces.ISenaiteLdap"
         />
 
+    <!-- Live connectivity probe (JSON), called from the
+         control-panel JS to colour the Server tab status dot. -->
+    <browser:page
+        name="senaite_ldap_status"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+        class=".discovery.LDAPStatusView"
+        permission="cmf.ManagePortal"
+        layer="senaite.ldap.interfaces.ISenaiteLdap"
+        />
+
     <!-- Static directory for js, css and image resources -->
     <plone:static
         directory="static"

@@ -9,6 +9,7 @@ YAFOWIL-based control panel replaced with a native SENAITE form. The
 installed. Existing ``pasldap`` plugin configuration is untouched.
 See ``docs/2.x-plan.md``.
 
+- #XXXX Factor inline JS into a static file; live AJAX status dot on the Server tab
 - #8 Detect base DN, mirror Users→Groups base, group picker for memberOf external DNs
 - #7 Discover LDAP object classes + live filter preview; rename @@plone_ → @@senaite_
 - #6 Add live LDAP search & inspector page
