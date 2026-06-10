@@ -15,30 +15,50 @@ from senaite.ldap import logger
 _ORIGINAL_LDAP_SESSION_SEARCH = _ldap_session.LDAPSession.search
 
 
+def _coerce_attrs(value):
+    """Normalise the second element of a search result entry to a
+    dict.
+
+    python-ldap usually returns ``(dn, {attr: [vals]})``, but against
+    some servers (LLDAP via Traefik observed) the attrs payload is a
+    flat list/tuple of ``(attr, [vals])`` pairs. Upstream consumers
+    like ``_node.search`` call ``six.iteritems(attrs)`` on it and
+    blow up with "'tuple' object has no attribute 'iteritems'".
+
+    Defensively coerce to dict; fall back to empty dict on failure.
+    """
+    if isinstance(value, dict):
+        return value
+    try:
+        return dict(value)
+    except Exception:
+        return {}
+
+
 def _is_valid_entry(entry):
-    """Return True if ``entry`` looks like a ``(dn, attrs)`` tuple
-    with a non-None DN.
+    """Return True if ``entry`` looks like a search result with a
+    non-None DN and at least an attributes dict.
 
     Upstream node.ext.ldap 1.2 (``session.py`` line 57) blindly does
-    ``x[0] is not None`` over every result entry, which raises
-    ``IndexError`` if the underlying LDAP library returns malformed
-    or empty entries — observed against LLDAP for searches that
-    bounce through Traefik. Be defensive: skip entries that are not
-    a non-empty two-element sequence with a non-None first element.
+    ``x[0] is not None``, which raises ``IndexError`` on empty or
+    non-sequence entries. Be defensive.
 
-    The 2-element check exists because upstream ``_node.search``
-    line 530 (``for dn, attrs in matches:``) unpacks every entry as
-    ``(dn, attrs)``. Some servers (LLDAP among them) include search
-    continuations / referral chasing entries in the result that have
-    more than two elements; letting those through here surfaces as
-    ``ValueError: too many values to unpack`` deeper in the stack.
+    We accept entries with two **or more** elements: python-ldap
+    sometimes returns ``(dn, attrs, controls)`` 3-tuples when the
+    underlying response carries per-entry controls. The original
+    upstream filter only checked element 0, so it would have passed
+    these through to ``_node.search`` line 530 (``for dn, attrs in
+    matches:``) which would have crashed with "too many values to
+    unpack" — what we'd seen against LLDAP earlier. The right move
+    is to keep these entries and coerce them to ``(dn, attrs)``
+    in ``safe_ldap_session_search``, not to drop them.
     """
     if not entry:
         return False
     if isinstance(entry, (bytes, str)):
         return False
     try:
-        if len(entry) != 2:
+        if len(entry) < 2:
             return False
         return entry[0] is not None
     except (IndexError, TypeError):
@@ -99,7 +119,13 @@ def safe_ldap_session_search(self, queryFilter='(objectClass=*)',
         res = raw
 
     try:
-        res = [x for x in res if _is_valid_entry(x)]
+        # Coerce every retained entry to a 2-tuple (dn, attrs_dict)
+        # so the upstream consumer
+        # ``for dn, attrs in matches: six.iteritems(attrs)`` in
+        # ``_node.search`` doesn't choke on 3-tuples (per-entry
+        # controls) or on attrs payloads that aren't real dicts.
+        res = [(x[0], _coerce_attrs(x[1]))
+               for x in res if _is_valid_entry(x)]
     except Exception as exc:
         logger.warning(
             "LDAP result filtering failed (%s); returning empty.",

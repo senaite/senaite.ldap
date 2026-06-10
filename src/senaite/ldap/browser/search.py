@@ -58,6 +58,22 @@ def _safe_unicode(value):
     return safe_unicode(value) if value is not None else u""
 
 
+def _dn_to_text(value):
+    """Coerce an LDAP search-result entry to a DN string.
+
+    ``LDAPNode.search`` without ``attrlist`` is documented to return
+    plain DN strings, but defensively we sometimes see ``(dn, attrs)``
+    tuples slip through (e.g. when the upstream-patched session
+    consumer treats per-entry controls as part of the payload). Plain
+    ``safe_unicode`` would pass a tuple through unchanged, ``json.dumps``
+    would emit it as a JSON array, and the front-end would render
+    ``cn=foo,...,[object Object]``. Pull the DN element explicitly.
+    """
+    if isinstance(value, (list, tuple)):
+        value = value[0] if value else u""
+    return _safe_unicode(value)
+
+
 class _LDAPSearchBase(BrowserView):
     """Shared helpers for the search page and JSON endpoints."""
 
@@ -167,7 +183,7 @@ class LDAPSearchResultsView(_LDAPSearchBase):
             "filter": query_filter,
             "count": len(dns),
             "truncated": truncated,
-            "dns": [_safe_unicode(dn) for dn in dns],
+            "dns": [_dn_to_text(dn) for dn in dns],
         })
 
 

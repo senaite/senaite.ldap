@@ -27,6 +27,7 @@ from node.ext.ldap import LDAPNode
 from node.ext.ldap.interfaces import ILDAPGroupsConfig
 from node.ext.ldap.interfaces import ILDAPProps
 from node.ext.ldap.interfaces import ILDAPUsersConfig
+from node.ext.ldap.scope import BASE
 from node.ext.ldap.scope import SUBTREE
 from Products.CMFCore.utils import getToolByName
 from Products.CMFPlone.utils import safe_unicode
@@ -49,6 +50,42 @@ def _safe_unicode(value):
     if value is None:
         return u""
     return safe_unicode(value)
+
+
+def _extract_object_classes(attrs):
+    """Yield objectClass values from an attrs payload regardless of
+    case or container shape.
+
+    LDAP attribute names are case-insensitive in the protocol but
+    Python dict lookups aren't, and the underlying library may
+    return the dict keyed differently across servers (``objectClass``
+    vs ``objectclass`` vs bytes). Iterate keys and pick whichever
+    one matches case-insensitively.
+    """
+    if not attrs:
+        return []
+    try:
+        items = attrs.items()
+    except AttributeError:
+        # node.ext.ldap node.attrs sometimes behaves like a dict via
+        # __getitem__/__iter__ without exposing items(); fall back.
+        items = ((k, attrs[k]) for k in attrs)
+    for key, value in items:
+        try:
+            key_s = key.decode("utf-8") if isinstance(key, bytes) else key
+        except UnicodeDecodeError:
+            continue
+        if key_s.lower() != u"objectclass":
+            continue
+        if value is None:
+            continue
+        if isinstance(value, (bytes, str)):
+            return [value]
+        try:
+            return list(value)
+        except TypeError:
+            return [value]
+    return []
 
 
 def _cn_from_dn(dn):
@@ -126,47 +163,57 @@ class LDAPDiscoverObjectClassesView(_DiscoveryBase):
                 "object_classes": [],
             })
 
+        from node.ext.ldap.session import LDAPSession
+        session = LDAPSession(self.props)
+
+        # Step 1: list DNs under the base (SUBTREE).
         try:
-            node = LDAPNode(base_dn, self.props)
-            node.search_scope = SUBTREE
-            results = node.search(
+            entries = session.search(
                 queryFilter=u"(objectClass=*)",
-                attrlist=[u"objectClass"],
+                scope=SUBTREE,
+                baseDN=base_dn,
             )
         except Exception as exc:
             logger.warn(
-                "Object-class discovery failed for %s base %r — %s",
-                which, base_dn, exc)
+                "Object-class discovery (listing) failed for %s "
+                "base %r — %s", which, base_dn, exc)
             return json.dumps({
                 "ok": False,
                 "error": str(exc),
                 "object_classes": [],
             })
 
-        # node.search returns either a list of DNs or, when attrlist
-        # is provided, a list of (dn, attrdict) tuples. Normalise.
+        dns = []
+        for entry in entries:
+            if not entry or len(entry) < 1:
+                continue
+            dns.append(_safe_unicode(entry[0]))
+
+        # Step 2: for each sampled DN, do a BASE-scope fetch for its
+        # full attrs. Bypasses node.ext.ldap's tree-walking
+        # abstractions which proved brittle against LLDAP — direct
+        # session.search calls give us back the attrs payload our
+        # patched safe_ldap_session_search has already normalised to
+        # a dict via _coerce_attrs.
         seen = set()
         sampled = 0
-        for entry in results:
+        for dn in dns:
             if sampled >= SAMPLE_SIZE:
                 break
-            attrs = {}
-            if isinstance(entry, tuple) and len(entry) == 2:
-                _dn, attrs = entry
-            else:
-                # Plain DN result; need a follow-up attr fetch to see
-                # objectClass. Fall back to fetching the node.
-                try:
-                    child = node.node_by_dn(
-                        _safe_unicode(entry), strict=True)
-                    attrs = {u"objectClass": child.attrs.get(u"objectClass")}
-                except Exception:
+            try:
+                base_entries = session.search(
+                    queryFilter=u"(objectClass=*)",
+                    scope=BASE,
+                    baseDN=dn,
+                )
+            except Exception:
+                continue
+            for entry in base_entries:
+                if not entry or len(entry) < 2:
                     continue
-            ocs = attrs.get(u"objectClass") or attrs.get(b"objectClass") or []
-            if isinstance(ocs, (bytes, str)):
-                ocs = [ocs]
-            for oc in ocs:
-                seen.add(_safe_unicode(oc))
+                attrs = entry[1]
+                for oc in _extract_object_classes(attrs):
+                    seen.add(_safe_unicode(oc))
             sampled += 1
 
         seen.discard(u"top")  # always present, never useful to pick
@@ -260,6 +307,34 @@ class LDAPDiscoverGroupsView(_DiscoveryBase):
             "filter": filter_expr,
             "groups": out,
         })
+
+
+class LDAPStatusView(_DiscoveryBase):
+    """JSON: live connectivity probe.
+
+    Runs ``LDAPSession.checkServerProperties`` and reports
+    ``{ok, message}``. Called by the control-panel JS on page load
+    to colour the *Server* tab's connection dot.
+    """
+
+    def __call__(self):
+        self._require_plugin()
+        self.request.response.setHeader(
+            "Content-Type", "application/json")
+
+        from node.ext.ldap.session import LDAPSession
+        try:
+            session = LDAPSession(self.props)
+            ok, message = session.checkServerProperties()
+            return json.dumps({
+                "ok": bool(ok),
+                "message": _safe_unicode(message),
+            })
+        except Exception as exc:
+            return json.dumps({
+                "ok": False,
+                "message": _safe_unicode(str(exc)),
+            })
 
 
 class LDAPDiscoverNamingContextsView(_DiscoveryBase):
