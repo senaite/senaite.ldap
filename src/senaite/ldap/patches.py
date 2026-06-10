@@ -15,6 +15,26 @@ from senaite.ldap import logger
 _ORIGINAL_LDAP_SESSION_SEARCH = _ldap_session.LDAPSession.search
 
 
+def _coerce_attrs(value):
+    """Normalise the second element of a search result entry to a
+    dict.
+
+    python-ldap usually returns ``(dn, {attr: [vals]})``, but against
+    some servers (LLDAP via Traefik observed) the attrs payload is a
+    flat list/tuple of ``(attr, [vals])`` pairs. Upstream consumers
+    like ``_node.search`` call ``six.iteritems(attrs)`` on it and
+    blow up with "'tuple' object has no attribute 'iteritems'".
+
+    Defensively coerce to dict; fall back to empty dict on failure.
+    """
+    if isinstance(value, dict):
+        return value
+    try:
+        return dict(value)
+    except Exception:
+        return {}
+
+
 def _is_valid_entry(entry):
     """Return True if ``entry`` looks like a search result with a
     non-None DN and at least an attributes dict.
@@ -99,11 +119,13 @@ def safe_ldap_session_search(self, queryFilter='(objectClass=*)',
         res = raw
 
     try:
-        # Coerce every retained entry to a 2-tuple (dn, attrs) so the
-        # upstream consumer ``for dn, attrs in matches:`` in
-        # ``_node.search`` doesn't choke on 3-tuples with per-entry
-        # controls.
-        res = [(x[0], x[1]) for x in res if _is_valid_entry(x)]
+        # Coerce every retained entry to a 2-tuple (dn, attrs_dict)
+        # so the upstream consumer
+        # ``for dn, attrs in matches: six.iteritems(attrs)`` in
+        # ``_node.search`` doesn't choke on 3-tuples (per-entry
+        # controls) or on attrs payloads that aren't real dicts.
+        res = [(x[0], _coerce_attrs(x[1]))
+               for x in res if _is_valid_entry(x)]
     except Exception as exc:
         logger.warning(
             "LDAP result filtering failed (%s); returning empty.",
