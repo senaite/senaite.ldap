@@ -86,13 +86,19 @@
           </tal:b>
         </small>
       </div>
-      <form method="post" class="mb-0"
-            tal:attributes="action string:${context/absolute_url}/@@plone_ldapcontrolpanel">
-        <button type="submit" name="form.action" value="test"
-                class="btn btn-sm btn-outline-secondary"
-                tal:attributes="disabled python:not connected and 'disabled' or None"
-                i18n:translate="">Test connection</button>
-      </form>
+      <div class="d-flex align-items-center">
+        <a class="btn btn-sm btn-outline-secondary mr-2"
+           tal:attributes="href string:${context/absolute_url}/@@plone_ldapsearch;
+                           class python:'btn btn-sm btn-outline-secondary mr-2' + (connected and '' or ' disabled')"
+           i18n:translate="">Search &amp; inspect</a>
+        <form method="post" class="mb-0"
+              tal:attributes="action string:${context/absolute_url}/@@plone_ldapcontrolpanel">
+          <button type="submit" name="form.action" value="test"
+                  class="btn btn-sm btn-outline-secondary"
+                  tal:attributes="disabled python:not connected and 'disabled' or None"
+                  i18n:translate="">Test connection</button>
+        </form>
+      </div>
     </div>
   </div>
 

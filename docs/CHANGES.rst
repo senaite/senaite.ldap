@@ -20,6 +20,12 @@ disk footprint as well.
 - Upgrade step 1100 → 2000 cleans up orphan YAFOWIL registry records
   on existing 1.x installs and re-imports the controlpanel profile.
 - Add unit tests for the control panel form helpers.
+- Add a live LDAP search / inspector page at
+  ``@@plone_ldapsearch``, linked from the control-panel status
+  header. Browse the directory by Users / Groups / custom base DN,
+  run arbitrary RFC 4515 filters, click a result to expand its
+  full attribute set. Replaces the ``@@plone_ldapinspector`` view
+  from the dropped ``plonecontrolpanel`` sub-package.
 
 
 1.1.0 (2026-06-09)
