@@ -4,6 +4,20 @@ Changelog
 2.0.0 (unreleased)
 ------------------
 
+- Rename all control-panel views from the ``@@plone_ldap*`` prefix
+  to ``@@senaite_ldap*``. Existing 1.x or early-2.x configlets are
+  rewritten by upgrade step 2000 → 2010.
+- Object-class fields in the Users and Groups tabs are now
+  multi-select pickers populated by sampling the live directory
+  (``@@senaite_ldapdiscover_objectclasses``). The underlying
+  newline-joined textarea stays available behind an *edit raw*
+  link.
+- New live filter preview under each tab showing the LDAP filter
+  the configured object classes + query filter will produce.
+- New discovery endpoint ``@@senaite_ldapdiscover_groups`` returning
+  groups under the Groups base DN (used by upcoming PRs that wire
+  group selection into the form).
+
 2.x replaces the YAFOWIL-based LDAP control panel with a native
 SENAITE form. The ``pas.plugins.ldap.plonecontrolpanel`` sub-package
 and its profile are no longer installed; our ZCML no longer pulls in

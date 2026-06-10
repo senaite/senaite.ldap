@@ -114,7 +114,7 @@
         </small>
       </div>
       <form method="post" class="mb-0"
-            tal:attributes="action string:${context/absolute_url}/@@plone_ldapcontrolpanel">
+            tal:attributes="action string:${context/absolute_url}/@@senaite_ldapcontrolpanel">
         <button type="submit" name="form.action" value="test"
                 class="btn btn-sm btn-outline-secondary"
                 tal:attributes="disabled python:not connected and 'disabled' or None"
@@ -124,7 +124,7 @@
   </div>
 
   <form method="post" id="ldap-settings-form"
-        tal:attributes="action string:${context/absolute_url}/@@plone_ldapcontrolpanel">
+        tal:attributes="action string:${context/absolute_url}/@@senaite_ldapcontrolpanel">
 
     <ul class="nav nav-tabs" role="tablist">
       <li class="nav-item">
@@ -311,13 +311,52 @@
           </div>
 
           <div class="form-group">
-            <label for="f-users-oc" i18n:translate="">Object classes</label>
-            <textarea id="f-users-oc"
-                      class="form-control text-monospace" rows="3"
-                      name="users.objectClasses"
-                      tal:content="users/objectClasses">inetOrgPerson</textarea>
+            <label for="f-users-oc-picker"
+                   i18n:translate="">Object classes</label>
+            <div class="picker-and-textarea">
+              <select id="f-users-oc-picker"
+                      class="form-control picker"
+                      multiple="multiple"
+                      data-which="users"
+                      data-target="f-users-oc"
+                      size="6"></select>
+              <div class="d-flex align-items-center mt-1">
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary mr-2"
+                        data-action="discover-oc"
+                        data-which="users"
+                        data-picker="f-users-oc-picker"
+                        i18n:translate="">Refresh from server</button>
+                <small class="text-muted helptext"
+                       data-status="f-users-oc-status"></small>
+              </div>
+              <textarea id="f-users-oc"
+                        class="form-control text-monospace mt-2 d-none"
+                        rows="3"
+                        name="users.objectClasses"
+                        tal:content="users/objectClasses">inetOrgPerson</textarea>
+              <small class="form-text text-muted helptext mt-1"
+                     i18n:translate="">
+                Pick from the list, or click <em i18n:name="link">edit raw</em>
+                to hand-edit (one class per line).
+                <a href="#" class="reveal-textarea"
+                   data-target="f-users-oc"
+                   i18n:translate="">edit raw</a>
+              </small>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label i18n:translate="">Effective user filter (preview)</label>
+            <code class="d-block p-2 bg-light border rounded text-monospace"
+                  data-filter-preview="users">
+              (&amp;(objectClass=…))
+            </code>
             <small class="form-text text-muted helptext"
-                   i18n:translate="">One per line.</small>
+                   i18n:translate="">
+              Computed from the object classes and query filter
+              above. Updates as you change them.
+            </small>
           </div>
 
           <h6 class="section-heading"
@@ -457,17 +496,52 @@ fullname=cn</textarea>
           </div>
 
           <div class="form-group">
-            <label for="f-groups-oc" i18n:translate="">Object classes</label>
-            <textarea id="f-groups-oc"
-                      class="form-control text-monospace" rows="3"
-                      name="groups.objectClasses"
-                      tal:content="groups/objectClasses">groupOfNames</textarea>
+            <label for="f-groups-oc-picker"
+                   i18n:translate="">Object classes</label>
+            <div class="picker-and-textarea">
+              <select id="f-groups-oc-picker"
+                      class="form-control picker"
+                      multiple="multiple"
+                      data-which="groups"
+                      data-target="f-groups-oc"
+                      size="6"></select>
+              <div class="d-flex align-items-center mt-1">
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary mr-2"
+                        data-action="discover-oc"
+                        data-which="groups"
+                        data-picker="f-groups-oc-picker"
+                        i18n:translate="">Refresh from server</button>
+                <small class="text-muted helptext"
+                       data-status="f-groups-oc-status"></small>
+              </div>
+              <textarea id="f-groups-oc"
+                        class="form-control text-monospace mt-2 d-none"
+                        rows="3"
+                        name="groups.objectClasses"
+                        tal:content="groups/objectClasses">groupOfNames</textarea>
+              <small class="form-text text-muted helptext mt-1"
+                     i18n:translate="">
+                Pick from the list (one of <code>groupOfNames</code>,
+                <code>groupOfUniqueNames</code>, <code>posixGroup</code>,
+                <code>group</code> is required), or
+                <a href="#" class="reveal-textarea"
+                   data-target="f-groups-oc"
+                   i18n:translate="">edit raw</a>.
+              </small>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label i18n:translate="">Effective groups filter (preview)</label>
+            <code class="d-block p-2 bg-light border rounded text-monospace"
+                  data-filter-preview="groups">
+              (&amp;(objectClass=…))
+            </code>
             <small class="form-text text-muted helptext"
                    i18n:translate="">
-              One per line. One of these is mandatory:
-              <code>groupOfNames</code>,
-              <code>groupOfUniqueNames</code>,
-              <code>posixGroup</code>, <code>group</code>.
+              Computed from the object classes and query filter
+              above.
             </small>
           </div>
 
@@ -622,7 +696,7 @@ fullname=cn</textarea>
           <span id="ls-bridge" class="d-none"
                 tal:attributes="data-users-base users/baseDN;
                                 data-groups-base groups/baseDN;
-                                data-self-url string:${context/absolute_url}/@@plone_ldapcontrolpanel"></span>
+                                data-self-url string:${context/absolute_url}/@@senaite_ldapcontrolpanel"></span>
 
         </div>
       </div>
@@ -643,8 +717,178 @@ fullname=cn</textarea>
 
   </form>
 
+  <!-- ====== Discovery + filter-preview ======
+       Auto-populate the object-class pickers from the directory and
+       keep a live LDAP-filter preview in sync as the user edits.
+  -->
+  <script>
+    (function () {
+      var bridge = document.getElementById("ls-bridge");
+      if (!bridge) return;
+      var SELF_URL = bridge.getAttribute("data-self-url") || "";
+      var BASE_URL = SELF_URL.replace(/\/@@senaite_ldapcontrolpanel$/, "");
+
+      // ---- helpers ----
+      function textareaValue(id) {
+        var ta = document.getElementById(id);
+        return ta ? ta.value : "";
+      }
+
+      function setTextareaLines(id, items) {
+        var ta = document.getElementById(id);
+        if (!ta) return;
+        ta.value = items.join("\n");
+        ta.dispatchEvent(new Event("change"));
+      }
+
+      function parseLines(value) {
+        return (value || "").split("\n")
+          .map(function (s) { return s.trim(); })
+          .filter(Boolean);
+      }
+
+      function syncTextareaFromPicker(picker) {
+        var targetId = picker.getAttribute("data-target");
+        var selected = Array.from(picker.selectedOptions)
+                            .map(function (o) { return o.value; });
+        setTextareaLines(targetId, selected);
+      }
+
+      function populatePicker(picker, available, selected) {
+        // Merge available + currently-selected so currently-saved
+        // values that aren't in the discovered set still show up.
+        var merged = {};
+        available.forEach(function (oc) { merged[oc] = true; });
+        selected.forEach(function (oc) { merged[oc] = true; });
+        var keys = Object.keys(merged).sort();
+
+        while (picker.firstChild) picker.removeChild(picker.firstChild);
+        keys.forEach(function (oc) {
+          var opt = document.createElement("option");
+          opt.value = oc;
+          opt.textContent = oc;
+          if (selected.indexOf(oc) !== -1) opt.selected = true;
+          picker.appendChild(opt);
+        });
+      }
+
+      function discover(picker, statusEl) {
+        var which = picker.getAttribute("data-which");
+        statusEl.textContent = "Loading…";
+        fetch(
+          BASE_URL + "/@@senaite_ldapdiscover_objectclasses?which=" +
+            encodeURIComponent(which),
+          { credentials: "same-origin" }
+        )
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (!data.ok) {
+              statusEl.textContent = "Discovery failed: " + data.error;
+              return;
+            }
+            var targetId = picker.getAttribute("data-target");
+            var current = parseLines(textareaValue(targetId));
+            populatePicker(picker, data.object_classes, current);
+            statusEl.textContent =
+              "Found " + data.object_classes.length +
+              " object class(es) from " + data.sampled +
+              " sampled entries.";
+          })
+          .catch(function (err) {
+            statusEl.textContent = "Discovery failed: " + err;
+          });
+      }
+
+      function initPicker(picker) {
+        var targetId = picker.getAttribute("data-target");
+        var current = parseLines(textareaValue(targetId));
+        // Show what we currently have, even before clicking refresh.
+        populatePicker(picker, [], current);
+        picker.addEventListener("change", function () {
+          syncTextareaFromPicker(picker);
+        });
+      }
+
+      // Wire up the two pickers.
+      ["f-users-oc-picker", "f-groups-oc-picker"].forEach(function (id) {
+        var picker = document.getElementById(id);
+        if (picker) initPicker(picker);
+      });
+
+      // Wire up "Refresh from server" buttons.
+      document.querySelectorAll("[data-action='discover-oc']")
+        .forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var picker = document.getElementById(
+              btn.getAttribute("data-picker"));
+            if (!picker) return;
+            // data-status="f-users-oc-status" matches picker
+            // "f-users-oc-picker" by replacing -picker with -status.
+            var statusId = picker.id.replace(/-picker$/, "-status");
+            var status = document.querySelector(
+              "[data-status='" + statusId + "']");
+            if (status) discover(picker, status);
+          });
+        });
+
+      // "edit raw" links: reveal the underlying textarea.
+      document.querySelectorAll("a.reveal-textarea")
+        .forEach(function (link) {
+          link.addEventListener("click", function (ev) {
+            ev.preventDefault();
+            var id = link.getAttribute("data-target");
+            var ta = document.getElementById(id);
+            if (ta) ta.classList.toggle("d-none");
+          });
+        });
+
+      // ---- Live filter preview ----
+      // Mirrors what node.ext.ldap will send: an AND of the
+      // queryFilter (if any) and an OR of objectClass clauses.
+      function buildFilter(which) {
+        var ocId = "f-" + which + "-oc";
+        var queryId = which === "users"
+          ? "f-users-query" : "f-groups-query";
+        var ocs = parseLines(textareaValue(ocId));
+        var query = (document.getElementById(queryId) || {}).value || "";
+        query = query.trim();
+
+        var ocPart = "";
+        if (ocs.length === 1) {
+          ocPart = "(objectClass=" + ocs[0] + ")";
+        } else if (ocs.length > 1) {
+          ocPart = "(|" + ocs.map(function (oc) {
+            return "(objectClass=" + oc + ")";
+          }).join("") + ")";
+        }
+
+        if (ocPart && query) return "(&" + ocPart + query + ")";
+        return ocPart || query || "(objectClass=*)";
+      }
+
+      function updatePreviews() {
+        document.querySelectorAll("[data-filter-preview]")
+          .forEach(function (el) {
+            var which = el.getAttribute("data-filter-preview");
+            el.textContent = buildFilter(which);
+          });
+      }
+
+      // Trigger preview update on every relevant change.
+      ["f-users-oc", "f-users-query",
+       "f-groups-oc", "f-groups-query"].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.addEventListener("input", updatePreviews);
+          el.addEventListener("change", updatePreviews);
+        }
+      });
+      updatePreviews();
+    })();
+  </script>
+
   <!-- Inline LDAP-search JS. Uses createElement throughout so
-       Chameleon doesn't choke on JS-string </tag> literals. -->
+       Chameleon doesn't choke on JS-string close-tag literals. -->
   <script>
     (function () {
       var bridge = document.getElementById("ls-bridge");
@@ -652,7 +896,7 @@ fullname=cn</textarea>
       var USERS_BASE = bridge.getAttribute("data-users-base") || "";
       var GROUPS_BASE = bridge.getAttribute("data-groups-base") || "";
       var SELF_URL = bridge.getAttribute("data-self-url") || "";
-      var BASE_URL = SELF_URL.replace(/\/@@plone_ldapcontrolpanel$/, "");
+      var BASE_URL = SELF_URL.replace(/\/@@senaite_ldapcontrolpanel$/, "");
 
       window.ldapSearch = {
 
@@ -687,7 +931,7 @@ fullname=cn</textarea>
           var filter = document.getElementById("ls-filter").value;
           var scope = document.getElementById("ls-scope").value;
 
-          var url = BASE_URL + "/@@plone_ldapsearch_results"
+          var url = BASE_URL + "/@@senaite_ldapsearch_results"
                   + "?base=" + encodeURIComponent(base)
                   + "&base_dn=" + encodeURIComponent(baseDn)
                   + "&filter=" + encodeURIComponent(filter)
@@ -752,7 +996,7 @@ fullname=cn</textarea>
           tr.classList.add("is-open");
           var base = document.getElementById("ls-base").value;
           var dn = tr.getAttribute("data-dn");
-          var url = BASE_URL + "/@@plone_ldapsearch_attrs"
+          var url = BASE_URL + "/@@senaite_ldapsearch_attrs"
                   + "?base=" + encodeURIComponent(base)
                   + "&dn=" + encodeURIComponent(dn);
 

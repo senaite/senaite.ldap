@@ -43,7 +43,7 @@
   </style>
 
   <a id="setup-link" class="link-parent"
-     tal:attributes="href string:${context/absolute_url}/@@plone_ldapcontrolpanel"
+     tal:attributes="href string:${context/absolute_url}/@@senaite_ldapcontrolpanel"
      i18n:translate="">LDAP / Active Directory</a>
 
   <h1 i18n:translate="">LDAP Search &amp; Inspector</h1>
@@ -110,7 +110,7 @@
         <button type="submit" class="btn btn-primary"
                 i18n:translate="">Search</button>
         <a class="btn btn-outline-secondary ml-2"
-           tal:attributes="href string:${context/absolute_url}/@@plone_ldapcontrolpanel"
+           tal:attributes="href string:${context/absolute_url}/@@senaite_ldapcontrolpanel"
            i18n:translate="">Back to settings</a>
       </div>
     </form>
@@ -136,7 +136,7 @@
   <span id="ls-bridge" class="d-none"
         tal:attributes="data-users-base users_base;
                         data-groups-base groups_base;
-                        data-self-url string:${context/absolute_url}/@@plone_ldapsearch"></span>
+                        data-self-url string:${context/absolute_url}/@@senaite_ldapsearch"></span>
 
   <script>
     (function () {
@@ -144,7 +144,7 @@
       var USERS_BASE = bridge.getAttribute("data-users-base") || "";
       var GROUPS_BASE = bridge.getAttribute("data-groups-base") || "";
       var SELF_URL = bridge.getAttribute("data-self-url") || "";
-      var BASE_URL = SELF_URL.replace(/\/@@plone_ldapsearch$/, "");
+      var BASE_URL = SELF_URL.replace(/\/@@senaite_ldapsearch$/, "");
 
       window.ldapSearch = {
 
@@ -181,7 +181,7 @@
           var filter = document.getElementById("ls-filter").value;
           var scope = document.getElementById("ls-scope").value;
 
-          var url = this.baseUrl() + "/@@plone_ldapsearch_results"
+          var url = this.baseUrl() + "/@@senaite_ldapsearch_results"
                   + "?base=" + encodeURIComponent(base)
                   + "&base_dn=" + encodeURIComponent(baseDn)
                   + "&filter=" + encodeURIComponent(filter)
@@ -252,7 +252,7 @@
           tr.classList.add("is-open");
           var base = document.getElementById("ls-base").value;
           var dn = tr.getAttribute("data-dn");
-          var url = this.baseUrl() + "/@@plone_ldapsearch_attrs"
+          var url = this.baseUrl() + "/@@senaite_ldapsearch_attrs"
                   + "?base=" + encodeURIComponent(base)
                   + "&dn=" + encodeURIComponent(dn);
 
