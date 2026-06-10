@@ -82,13 +82,19 @@ def safe_ldap_session_search(self, queryFilter='(objectClass=*)',
     )
 
     if page_size:
-        try:
+        # The communicator returns either ``(results, cookie)`` when
+        # the server included a paged-results control in the
+        # response, or a flat results list when it didn't. Detect by
+        # shape — DO NOT try to unpack a flat list of N results into
+        # ``res, cookie`` because that throws away the actual data
+        # whenever the server ignores our paged-results request
+        # (LLDAP being one such server).
+        if (isinstance(raw, tuple) and len(raw) == 2
+                and not (raw and isinstance(raw[0], (bytes, str)))):
             res, cookie = raw
-        except (ValueError, TypeError) as exc:
-            logger.warning(
-                "LDAP paged-results response had no cookie (%s); "
-                "treating as empty page.", exc)
-            res, cookie = [], None
+        else:
+            res = raw
+            cookie = None
     else:
         res = raw
 

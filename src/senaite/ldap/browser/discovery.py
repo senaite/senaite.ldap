@@ -309,7 +309,22 @@ class LDAPDiscoverNamingContextsView(_DiscoveryBase):
                     contexts.add(_safe_unicode(nc))
                 break
 
+        # Fallback: some servers (LLDAP) don't publish namingContexts
+        # on the rootDSE. Derive a sensible candidate from the bind
+        # DN's dc= suffix.
+        fallback_used = False
+        if not contexts:
+            bind_dn = _safe_unicode(getattr(self.props, "user", "") or "")
+            dc_suffix = u",".join(
+                part.strip() for part in bind_dn.split(u",")
+                if part.strip().lower().startswith(u"dc=")
+            )
+            if dc_suffix:
+                contexts.add(dc_suffix)
+                fallback_used = True
+
         return json.dumps({
             "ok": True,
             "naming_contexts": sorted(contexts),
+            "fallback": fallback_used,
         })

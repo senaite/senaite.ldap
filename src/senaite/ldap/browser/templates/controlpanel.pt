@@ -23,6 +23,13 @@
       width: 100%;
       max-width: 100%;
     }
+    /* Re-enable Bootstrap's input-group flex sizing — without this
+       our 100%-width rule pushes the button onto a new line. */
+    .senaite-ldap-form .input-group > .form-control,
+    .senaite-ldap-form .input-group > .form-control-lg {
+      flex: 1 1 auto;
+      width: 1%;
+    }
     .senaite-ldap-form .form-control.text-monospace {
       font-size: 0.95rem;
     }
@@ -47,6 +54,20 @@
     .senaite-ldap-form .helptext {
       font-size: 0.85rem;
     }
+    /* Connection-status dot on the Server tab. */
+    .senaite-ldap-form .conn-dot {
+      display: inline-block;
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 50%;
+      margin-right: 0.4rem;
+      vertical-align: middle;
+      background: #d1d5db;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.1) inset;
+    }
+    .senaite-ldap-form .conn-dot.is-on  { background: #22c55e; }
+    .senaite-ldap-form .conn-dot.is-bad { background: #ef4444; }
+    .senaite-ldap-form .conn-dot.is-off { background: #d1d5db; }
     /* LDAP search */
     .senaite-ldap-form .result-row { cursor: pointer; }
     .senaite-ldap-form .result-row.is-open { background: #eef4ff; }
@@ -88,48 +109,18 @@
 
   <div class="senaite-ldap-form">
 
-  <!-- Compact status header -->
-  <div class="card bg-light mb-3"
-       tal:define="connected python:bool(server['uri'])">
-    <div class="card-body py-2 d-flex align-items-center">
-      <div class="flex-grow-1 mr-3">
-        <small class="text-muted text-uppercase"
-               i18n:translate="">Target</small>
-        <div tal:condition="connected"
-             tal:content="server/uri"
-             class="font-weight-bold text-monospace">
-          ldaps://example.com:636
-        </div>
-        <div tal:condition="not:connected"
-             class="text-muted font-italic"
-             i18n:translate="">No connection URI configured</div>
-        <small class="text-muted">
-          <tal:b tal:condition="server/anonymous"
-                 i18n:translate="">Anonymous bind</tal:b>
-          <tal:b tal:condition="not:server/anonymous">
-            <span i18n:translate="">Bind DN:</span>
-            <code class="text-dark"
-                  tal:content="server/user">cn=manager,dc=…</code>
-          </tal:b>
-        </small>
-      </div>
-      <form method="post" class="mb-0"
-            tal:attributes="action string:${context/absolute_url}/@@senaite_ldapcontrolpanel">
-        <button type="submit" name="form.action" value="test"
-                class="btn btn-sm btn-outline-secondary"
-                tal:attributes="disabled python:not connected and 'disabled' or None"
-                i18n:translate="">Test connection</button>
-      </form>
-    </div>
-  </div>
-
   <form method="post" id="ldap-settings-form"
         tal:attributes="action string:${context/absolute_url}/@@senaite_ldapcontrolpanel">
 
-    <ul class="nav nav-tabs" role="tablist">
+    <ul class="nav nav-tabs"
+        tal:define="connected python:bool(server['uri'])"
+        role="tablist">
       <li class="nav-item">
-        <a class="nav-link active" data-toggle="tab" href="#tab-server" role="tab"
-           i18n:translate="">Server</a>
+        <a class="nav-link active" data-toggle="tab" href="#tab-server" role="tab">
+          <span class="conn-dot"
+                tal:attributes="class python:'conn-dot ' + (connected and 'is-on' or 'is-off')"></span>
+          <span i18n:translate="">Server</span>
+        </a>
       </li>
       <li class="nav-item">
         <a class="nav-link" data-toggle="tab" href="#tab-users" role="tab"
@@ -154,6 +145,12 @@
       <!-- ============== Server ============== -->
       <div class="tab-pane fade show active" id="tab-server" role="tabpanel">
         <div class="field-row">
+
+          <div class="form-group d-flex justify-content-end">
+            <button type="submit" name="form.action" value="test"
+                    class="btn btn-sm btn-outline-secondary"
+                    i18n:translate="">Test connection</button>
+          </div>
 
           <div class="form-group">
             <label for="f-server-uri" i18n:translate="">Connection URI</label>
