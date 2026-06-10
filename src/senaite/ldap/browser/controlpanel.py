@@ -185,6 +185,7 @@ class LDAPControlPanel(BrowserView):
             "user": getattr(props, "user", "") or "",
             "password": getattr(props, "password", "") or "",
             "ignore_cert": bool(getattr(props, "ignore_cert", False)),
+            "tls_cacertfile": getattr(props, "tls_cacertfile", "") or "",
             "conn_timeout": getattr(props, "conn_timeout", 0) or 0,
             "op_timeout": getattr(props, "op_timeout", 0) or 0,
             "page_size": getattr(props, "page_size", 1000) or 1000,
@@ -264,6 +265,8 @@ class LDAPControlPanel(BrowserView):
             if password:
                 props.password = _to_text(password)
         props.ignore_cert = _to_bool(form.get("server.ignore_cert"))
+        props.tls_cacertfile = _to_text(
+            form.get("server.tls_cacertfile", "").strip())
         props.conn_timeout = _to_int(form.get("server.conn_timeout"), 0)
         props.op_timeout = _to_int(form.get("server.op_timeout"), 0)
         props.page_size = max(_to_int(form.get("server.page_size"), 1000), 1)
