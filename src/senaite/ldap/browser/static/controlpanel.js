@@ -485,9 +485,30 @@
   }
 
   // ====================================================================
+  // Shared DOM / fetch helpers (used by modules 3 and 4 below)
+  // ====================================================================
+
+  function clearChildren(node) {
+    if (!node) return;
+    while (node.firstChild) node.removeChild(node.firstChild);
+  }
+
+  function setStatus(selector, text) {
+    var el = document.querySelector(selector);
+    if (el) el.textContent = text;
+  }
+
+  function fetchJSON(url, opts) {
+    var options = { credentials: "same-origin" };
+    if (opts && opts.method) options.method = opts.method;
+    return fetch(url, options).then(function (r) { return r.json(); });
+  }
+
+  // ====================================================================
   // 3) Cache insights + purge (Cache tab)
   // ====================================================================
 
+  var CACHE_STATUS = "[data-status='cache-status']";
   var STAT_LABELS = {
     version: "Server version",
     uptime: "Uptime",
@@ -504,38 +525,25 @@
     curr_connections: "Connections"
   };
 
-  function formatStat(key, value) {
-    if (value == null) return "";
-    if (key === "uptime") {
-      var s = Number(value);
-      if (!isFinite(s)) return String(value);
-      var d = Math.floor(s / 86400);
-      var h = Math.floor((s % 86400) / 3600);
-      var m = Math.floor((s % 3600) / 60);
-      var parts = [];
-      if (d) parts.push(d + "d");
-      if (h) parts.push(h + "h");
-      if (m) parts.push(m + "m");
-      if (!parts.length) parts.push((s % 60) + "s");
-      return parts.join(" ");
-    }
-    if (key === "bytes" || key === "limit_maxbytes") {
-      return formatBytes(value);
-    }
-    if (key === "hit_rate") {
-      return (value * 100).toFixed(1) + "%";
-    }
-    if (typeof value === "number") {
-      return value.toLocaleString();
-    }
-    return String(value);
+  function formatUptime(seconds) {
+    var s = Number(seconds);
+    if (!isFinite(s)) return String(seconds);
+    var d = Math.floor(s / 86400);
+    var h = Math.floor((s % 86400) / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    var parts = [];
+    if (d) parts.push(d + "d");
+    if (h) parts.push(h + "h");
+    if (m) parts.push(m + "m");
+    if (!parts.length) parts.push((s % 60) + "s");
+    return parts.join(" ");
   }
 
   function formatBytes(n) {
     var units = ["B", "KiB", "MiB", "GiB", "TiB"];
-    var i = 0;
     var v = Number(n);
     if (!isFinite(v)) return String(n);
+    var i = 0;
     while (v >= 1024 && i < units.length - 1) {
       v /= 1024;
       i += 1;
@@ -543,39 +551,59 @@
     return v.toFixed(i === 0 ? 0 : 1) + " " + units[i];
   }
 
-  function renderCacheStats(data) {
+  // Dispatch table keeps formatStat flat: one entry per key that
+  // needs special rendering, default falls through to toLocaleString
+  // for numbers and String() for the rest.
+  var STAT_FORMATTERS = {
+    uptime: formatUptime,
+    bytes: formatBytes,
+    limit_maxbytes: formatBytes,
+    hit_rate: function (v) { return (v * 100).toFixed(1) + "%"; }
+  };
+
+  function formatStat(key, value) {
+    if (value == null) return "";
+    var fmt = STAT_FORMATTERS[key];
+    if (fmt) return fmt(value);
+    if (typeof value === "number") return value.toLocaleString();
+    return String(value);
+  }
+
+  function setCacheSectionVisible(visible) {
     var section = document.getElementById("cache-status-section");
+    if (section) section.style.display = visible ? "" : "none";
+  }
+
+  function renderCacheStats(data) {
     var panel = document.getElementById("cache-stats-panel");
     if (!panel) return;
+    clearChildren(panel);
 
     // Hide the whole Cache status block when memcache isn't in use —
     // no point showing an empty table or a "not configured" notice.
     if (!data.configured || !data.cache_enabled) {
-      if (section) section.style.display = "none";
-      while (panel.firstChild) panel.removeChild(panel.firstChild);
+      setCacheSectionVisible(false);
       return;
     }
-    if (section) section.style.display = "";
-
-    while (panel.firstChild) panel.removeChild(panel.firstChild);
+    setCacheSectionVisible(true);
 
     if (!data.servers || data.servers.length === 0) {
-      var none = document.createElement("p");
-      none.className = "text-muted small mb-0";
-      none.textContent = "No servers reported.";
-      panel.appendChild(none);
+      panel.appendChild(makeMutedText("No servers reported."));
       return;
     }
-
     data.servers.forEach(function (srv) {
       panel.appendChild(renderServerCard(srv));
     });
   }
 
-  function renderServerCard(srv) {
-    var card = document.createElement("div");
-    card.className = "card mb-2";
+  function makeMutedText(text) {
+    var p = document.createElement("p");
+    p.className = "text-muted small mb-0";
+    p.textContent = text;
+    return p;
+  }
 
+  function renderServerCardHeader(srv) {
     var header = document.createElement("div");
     header.className = "card-header py-2 d-flex align-items-center";
     var name = document.createElement("span");
@@ -587,9 +615,40 @@
       (srv.ok ? "badge-success" : "badge-danger");
     badge.textContent = srv.ok ? "reachable" : "unreachable";
     header.appendChild(badge);
-    card.appendChild(header);
+    return header;
+  }
 
-    if (!srv.ok || !srv.stats || Object.keys(srv.stats).length === 0) {
+  function renderStatRow(key, value) {
+    var tr = document.createElement("tr");
+    var th = document.createElement("th");
+    th.className = "pl-3";
+    th.style.width = "12rem";
+    th.textContent = STAT_LABELS[key];
+    tr.appendChild(th);
+    var td = document.createElement("td");
+    td.className = "text-monospace";
+    td.textContent = formatStat(key, value);
+    tr.appendChild(td);
+    return tr;
+  }
+
+  function renderStatsTable(stats) {
+    var table = document.createElement("table");
+    table.className = "table table-sm mb-0";
+    Object.keys(STAT_LABELS).forEach(function (key) {
+      if (key in stats) table.appendChild(renderStatRow(key, stats[key]));
+    });
+    return table;
+  }
+
+  function renderServerCard(srv) {
+    var card = document.createElement("div");
+    card.className = "card mb-2";
+    card.appendChild(renderServerCardHeader(srv));
+
+    var hasStats = srv.ok && srv.stats &&
+                   Object.keys(srv.stats).length > 0;
+    if (!hasStats) {
       var body = document.createElement("div");
       body.className = "card-body py-2 text-muted small";
       body.textContent = srv.ok ?
@@ -598,78 +657,58 @@
       card.appendChild(body);
       return card;
     }
-
-    var table = document.createElement("table");
-    table.className = "table table-sm mb-0";
-    Object.keys(STAT_LABELS).forEach(function (key) {
-      if (!(key in srv.stats)) return;
-      var tr = document.createElement("tr");
-      var th = document.createElement("th");
-      th.className = "pl-3";
-      th.style.width = "12rem";
-      th.textContent = STAT_LABELS[key];
-      tr.appendChild(th);
-      var td = document.createElement("td");
-      td.className = "text-monospace";
-      td.textContent = formatStat(key, srv.stats[key]);
-      tr.appendChild(td);
-      table.appendChild(tr);
-    });
-    card.appendChild(table);
+    card.appendChild(renderStatsTable(srv.stats));
     return card;
   }
 
   function loadCacheStats() {
-    var status = document.querySelector("[data-status='cache-status']");
-    if (status) status.textContent = "Loading…";
-    fetch(BASE_URL + "/@@senaite_ldap_cache_stats",
-          { credentials: "same-origin" })
-      .then(function (r) { return r.json(); })
+    setStatus(CACHE_STATUS, "Loading…");
+    fetchJSON(BASE_URL + "/@@senaite_ldap_cache_stats")
       .then(function (data) {
-        if (status) status.textContent = "";
+        setStatus(CACHE_STATUS, "");
         renderCacheStats(data);
       })
       .catch(function (err) {
-        if (status) status.textContent = "Stats failed: " + err;
+        setStatus(CACHE_STATUS, "Stats failed: " + err);
       });
   }
 
   function flushCache() {
-    var status = document.querySelector("[data-status='cache-status']");
     if (!window.confirm(
         "Purge ALL keys from the configured memcached? Every cached " +
         "LDAP lookup will be evicted; the next request rebuilds the " +
         "cache from scratch.")) {
       return;
     }
-    if (status) status.textContent = "Purging…";
-    fetch(BASE_URL + "/@@senaite_ldap_cache_flush",
-          { credentials: "same-origin", method: "POST" })
-      .then(function (r) { return r.json(); })
+    setStatus(CACHE_STATUS, "Purging…");
+    fetchJSON(BASE_URL + "/@@senaite_ldap_cache_flush", { method: "POST" })
       .then(function (data) {
-        if (status) status.textContent = data.message || "";
+        setStatus(CACHE_STATUS, data.message || "");
         if (data.ok) loadCacheStats();
       })
       .catch(function (err) {
-        if (status) status.textContent = "Purge failed: " + err;
+        setStatus(CACHE_STATUS, "Purge failed: " + err);
       });
   }
 
-  document.querySelectorAll("[data-action='cache-refresh']")
-    .forEach(function (btn) {
-      btn.addEventListener("click", loadCacheStats);
-    });
-  document.querySelectorAll("[data-action='cache-flush']")
-    .forEach(function (btn) {
-      btn.addEventListener("click", flushCache);
-    });
+  function bindCacheActions() {
+    document.querySelectorAll("[data-action='cache-refresh']")
+      .forEach(function (btn) {
+        btn.addEventListener("click", loadCacheStats);
+      });
+    document.querySelectorAll("[data-action='cache-flush']")
+      .forEach(function (btn) {
+        btn.addEventListener("click", flushCache);
+      });
+  }
+
+  bindCacheActions();
 
   // Always load once on page init: the stats response also drives
   // section visibility, so we need it even when the Cache tab isn't
   // the active one (e.g. restored from sticky tab state, where no
   // click / shown.bs.tab fires).
-  var cacheTabLink = document.querySelector("[href='#tab-cache']");
-  if (cacheTabLink) {
+  if (document.querySelector("[href='#tab-cache']")) {
     loadCacheStats();
   }
 
@@ -677,31 +716,55 @@
   // 4) Sticky active tab across reloads via ?tab= URL parameter
   // ====================================================================
 
+  // Whitelist the characters allowed in a tab id so a hostile ?tab=
+  // value can't break the CSS selector below (`querySelector` throws
+  // on a malformed selector and would abort the IIFE init).
+  var TAB_ID_RE = /^[A-Za-z0-9_-]+$/;
+
   var tabLinks = document.querySelectorAll(
     ".senaite-ldap-form .nav-tabs a.nav-link[data-toggle='tab']");
+
+  function deactivateAllTabs() {
+    tabLinks.forEach(function (l) { l.classList.remove("active"); });
+    document.querySelectorAll(".senaite-ldap-form .tab-pane")
+      .forEach(function (p) { p.classList.remove("active", "show"); });
+  }
 
   function activateTab(href) {
     var link = document.querySelector(
       ".senaite-ldap-form .nav-tabs a.nav-link[href='" + href + "']");
+    if (!link) return;
+
+    // Prefer Bootstrap's own tab plugin when jQuery is present:
+    // it keeps internal state (aria-selected, focus, shown.bs.tab)
+    // in sync. Manual class toggling alone leaves the nav-link
+    // visually inactive even though the pane shows.
+    var $ = window.jQuery;
+    if ($ && typeof $(link).tab === "function") {
+      $(link).tab("show");
+      return;
+    }
+
     var pane = document.querySelector(".senaite-ldap-form " + href);
-    if (!link || !pane) return;
-    tabLinks.forEach(function (l) { l.classList.remove("active"); });
-    document.querySelectorAll(".senaite-ldap-form .tab-pane")
-      .forEach(function (p) { p.classList.remove("active", "show"); });
+    if (!pane) return;
+    deactivateAllTabs();
     link.classList.add("active");
     pane.classList.add("active", "show");
+  }
+
+  function recordTabInUrl(href) {
+    var url = new URL(window.location.href);
+    url.searchParams.set("tab", href.replace(/^#/, ""));
+    window.history.replaceState({}, "", url.toString());
   }
 
   tabLinks.forEach(function (link) {
     link.addEventListener("click", function () {
       var href = link.getAttribute("href");
-      if (!href) return;
-      var url = new URL(window.location.href);
-      url.searchParams.set("tab", href.replace(/^#/, ""));
-      window.history.replaceState({}, "", url.toString());
+      if (href) recordTabInUrl(href);
     });
   });
 
   var urlTab = new URL(window.location.href).searchParams.get("tab");
-  if (urlTab) activateTab("#" + urlTab);
+  if (urlTab && TAB_ID_RE.test(urlTab)) activateTab("#" + urlTab);
 })();
