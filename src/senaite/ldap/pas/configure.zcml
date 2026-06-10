@@ -1,0 +1,15 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope">
+
+  <!-- Vendored LDAP PAS plugin adapters.
+       Route ILDAPProps / ILDAPUsersConfig / ILDAPGroupsConfig lookups
+       on instances of senaite.ldap.pas.plugin.LDAPPlugin through our
+       implementations. Upstream pas.plugins.ldap keeps its own
+       registrations for its own class; the two coexist because our
+       marker interface senaite.ldap.pas.interfaces.ILDAPPlugin is a
+       distinct identity from upstream's. -->
+  <adapter factory=".properties.LDAPProps" />
+  <adapter factory=".properties.UsersConfig" />
+  <adapter factory=".properties.GroupsConfig" />
+
+</configure>

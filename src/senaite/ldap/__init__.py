@@ -54,8 +54,8 @@ def _register_pas_plugin(context):
     """
     from AccessControl.Permissions import add_user_folders
     from Products.PluggableAuthService import registerMultiPlugin
-    from senaite.ldap.plugin import LDAPPlugin
-    from senaite.ldap.plugin import manage_addLDAPPlugin
+    from senaite.ldap.pas.plugin import LDAPPlugin
+    from senaite.ldap.pas.plugin import manage_addLDAPPlugin
 
     try:
         registerMultiPlugin(LDAPPlugin.meta_type)

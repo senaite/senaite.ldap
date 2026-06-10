@@ -24,10 +24,10 @@ import time
 from bda.cache import Memcached
 from bda.cache import NullCache
 from node.ext.ldap.interfaces import ICacheProviderFactory
-from senaite.ldap.plugin_interfaces import ICacheSettingsRecordProvider
-from senaite.ldap.plugin_interfaces import ILDAPPlugin
-from senaite.ldap.plugin_interfaces import IPluginCacheHandler
-from senaite.ldap.plugin_interfaces import VALUE_NOT_CACHED
+from senaite.ldap.pas.interfaces import ICacheSettingsRecordProvider
+from senaite.ldap.pas.interfaces import ILDAPPlugin
+from senaite.ldap.pas.interfaces import IPluginCacheHandler
+from senaite.ldap.pas.interfaces import VALUE_NOT_CACHED
 from zope.component import adapter
 from zope.component import queryUtility
 from zope.globalrequest import getRequest

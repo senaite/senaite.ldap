@@ -7,7 +7,7 @@
 
 """Built-in default values for the vendored LDAP PAS plugin.
 
-Used by `senaite.ldap.plugin_properties.propproxy` as the fall-back
+Used by `senaite.ldap.pas.properties.propproxy` as the fall-back
 when a key has not been written into the plugin's settings BTree.
 """
 

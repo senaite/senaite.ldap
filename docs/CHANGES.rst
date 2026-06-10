@@ -9,6 +9,7 @@ YAFOWIL-based control panel replaced with a native SENAITE form. The
 installed. Existing ``pasldap`` plugin configuration is untouched.
 See ``docs/2.x-plan.md``.
 
+- #23 Move vendored PAS plugin modules into senaite.ldap.pas package
 - #22 Vendor pas.plugins.ldap as senaite.ldap.plugin (dormant; no migration yet)
 - #21 Deactivate the stub IUserAdderPlugin on the pasldap plugin
 - #20 Groups tab: checkbox to expose / hide LDAP groups in SENAITE
