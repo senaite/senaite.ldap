@@ -165,13 +165,14 @@ class LDAPDiscoverObjectClassesView(_DiscoveryBase):
         try:
             node = LDAPNode(base_dn, self.props)
             node.search_scope = SUBTREE
-            # Request both casings — LDAP attribute names are
-            # case-insensitive per spec but some servers return
-            # entries only when the requested name matches exactly.
-            results = node.search(
-                queryFilter=u"(objectClass=*)",
-                attrlist=[u"objectClass", u"objectclass"],
-            )
+            # No attrlist — get back a flat list of DNs. Trying to
+            # ask for objectClass directly was unreliable: LLAP
+            # honours the request shape but the returned attrs
+            # payload is keyed in a way we couldn't introspect
+            # consistently (case + container shape variations).
+            # Round-trip per sampled DN via node_by_dn instead; it's
+            # only SAMPLE_SIZE (100) extra requests at most.
+            dns = node.search(queryFilter=u"(objectClass=*)")
         except Exception as exc:
             logger.warn(
                 "Object-class discovery failed for %s base %r — %s",
@@ -182,27 +183,20 @@ class LDAPDiscoverObjectClassesView(_DiscoveryBase):
                 "object_classes": [],
             })
 
-        # node.search returns either a list of DNs or, when attrlist
-        # is provided, a list of (dn, attrdict) tuples. Normalise.
         seen = set()
         sampled = 0
-        for entry in results:
+        for dn in dns:
             if sampled >= SAMPLE_SIZE:
                 break
-            attrs = None
-            if isinstance(entry, tuple) and len(entry) == 2:
-                _dn, attrs = entry
-            else:
-                # Plain DN result; need a follow-up attr fetch to see
-                # objectClass. Fall back to fetching the node.
-                try:
-                    child = node.node_by_dn(
-                        _safe_unicode(entry), strict=True)
-                    attrs = child.attrs
-                except Exception:
-                    continue
-            for oc in _extract_object_classes(attrs):
-                seen.add(_safe_unicode(oc))
+            try:
+                child = node.node_by_dn(_safe_unicode(dn), strict=True)
+                attrs = child.attrs
+            except Exception:
+                continue
+            ocs = _extract_object_classes(attrs)
+            if ocs:
+                for oc in ocs:
+                    seen.add(_safe_unicode(oc))
             sampled += 1
 
         seen.discard(u"top")  # always present, never useful to pick
