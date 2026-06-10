@@ -9,6 +9,7 @@ YAFOWIL-based control panel replaced with a native SENAITE form. The
 installed. Existing ``pasldap`` plugin configuration is untouched.
 See ``docs/2.x-plan.md``.
 
+- #27 BBB shim: alias legacy pas.plugins.ldap dotted paths to vendored symbols
 - #26 Prune dead upstream references in setuphandlers
 - #25 Drop pas.plugins.ldap and YAFOWIL runtime dependencies
 - #24 Migrate persisted pasldap instance to senaite.ldap.pas.plugin.LDAPPlugin
