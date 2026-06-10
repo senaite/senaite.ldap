@@ -9,6 +9,7 @@ YAFOWIL-based control panel replaced with a native SENAITE form. The
 installed. Existing ``pasldap`` plugin configuration is untouched.
 See ``docs/2.x-plan.md``.
 
+- #XX Consolidate all 2.0.0 upgrade steps into a single 1100 → 2000 step
 - #11 Handle unsolicited paged-results response (LLDAP) — fixes "always 1 result"
 - #10 Apply sane defaults for users/groups scope and objectClasses on upgrade
 - #9 Factor inline JS into a static file; live AJAX status dot on the Server tab

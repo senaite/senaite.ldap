@@ -22,29 +22,89 @@ USERS_DEFAULT_OBJECTCLASSES = [u"inetOrgPerson"]
 GROUPS_DEFAULT_OBJECTCLASSES = [u"groupOfNames"]
 
 
-def upgrade_2010_to_2020(setup_tool):
-    """Apply opinionated defaults for the four ``pas.plugins.ldap``
-    fields that ship at upstream-noise values and that the SENAITE
-    control panel doesn't override on first save.
+def upgrade_1100_to_2000(setup_tool):
+    """Migrate a 1.x install to 2.x.
 
-    The upstream defaults for ``users.scope`` and ``groups.scope`` are
-    ``BASE`` (0), which only ever returns the base DN entry itself —
-    no users, no groups. ``objectClasses`` ships empty, which makes
-    member-attribute discovery fail with
-    ``Can not lookup member attribute for object-classes: []``.
+    The 2.x line replaces the YAFOWIL-based control panel with a
+    native SENAITE form. The PAS plugin (``pasldap`` in ``acl_users``)
+    and its persistent configuration are kept, but four upstream
+    defaults that never made sense are corrected so a fresh install
+    actually resolves users and groups.
 
-    This step rewrites those fields *only when they're still at the
-    upstream-noise state*:
+    What this step does:
 
-    - ``scope == BASE`` → ``SUBTREE``
-    - ``objectClasses`` empty → a sensible default
-      (``inetOrgPerson`` for users, ``groupOfNames`` for groups)
+    1. Re-import the senaite.ldap ``controlpanel`` profile so the
+       "LDAP / Active Directory" entry appears in Site Setup under
+       the new ``@@senaite_ldapcontrolpanel`` URL. The 1.x configlet
+       was registered by ``pas.plugins.ldap.plonecontrolpanel``,
+       which we no longer install; without re-importing here the
+       configlet would silently disappear on upgrade.
 
-    A deliberately-set BASE or a non-empty ``objectClasses`` is left
-    alone. Idempotent — re-running the step is a no-op once the
-    fields hold real values.
+    2. Remove orphan ``yafowil`` / ``plone.bundles/yafowil`` registry
+       records left by the upstream profile.
+
+    3. Apply opinionated defaults for the four ``pas.plugins.ldap``
+       fields that ship at upstream-noise values:
+
+       - ``users.scope`` / ``groups.scope`` == ``BASE`` → ``SUBTREE``
+         (``BASE`` only ever returns the base DN entry itself.)
+       - empty ``users.objectClasses`` → ``[inetOrgPerson]``
+       - empty ``groups.objectClasses`` → ``[groupOfNames]``
+
+       Deliberately-set values (real scope choice, non-empty
+       objectClasses) are left alone. Idempotent.
     """
     portal = setup_tool.aq_inner.aq_parent
+    import_controlpanel(setup_tool)
+    drop_yafowil_registry_records(portal)
+    apply_sane_pasldap_defaults(portal)
+
+
+def import_controlpanel(setup_tool):
+    """Re-import the ``controlpanel`` GenericSetup step from the
+    senaite.ldap default profile so the configlet entry is registered
+    (and so the title / URL update if we ever change them).
+    """
+    setup_tool.runImportStepFromProfile(
+        "profile-senaite.ldap:default", "controlpanel")
+    logger.info("Re-imported senaite.ldap controlpanel profile")
+
+
+def drop_yafowil_registry_records(portal):
+    """Delete every registry record matching a key in REGISTRY_KEYS
+    that is *not* prefixed with ``pas.plugins.ldap``.
+
+    The 2.x setuphandlers REGISTRY_KEYS list contains both the
+    ``pas.plugins.ldap`` prefix (which we keep — it's the PAS plugin
+    configuration we still use) and the YAFOWIL prefixes (which we
+    purge). The uninstall handler iterates the same list; this
+    upgrade step only purges the YAFOWIL part.
+    """
+    registry = portal.portal_registry
+    yafowil_prefixes = [
+        key for key in REGISTRY_KEYS
+        if not key.startswith("pas.plugins.ldap")
+    ]
+    removed = 0
+    for record_key in list(registry.records.keys()):
+        for prefix in yafowil_prefixes:
+            if record_key.startswith(prefix):
+                del registry.records[record_key]
+                removed += 1
+                break
+    if removed:
+        logger.info(
+            "Removed %d orphan YAFOWIL registry records" % removed)
+    else:
+        logger.info("No orphan YAFOWIL registry records to remove")
+
+
+def apply_sane_pasldap_defaults(portal):
+    """Rewrite the four upstream-noise ``pas.plugins.ldap`` fields
+    when they're still at the noise state.
+
+    See ``_apply_defaults`` for the per-field rules.
+    """
     plugin = _get_plugin(portal)
     if plugin is None:
         logger.info("pasldap plugin not installed; skipping defaults")
@@ -86,80 +146,3 @@ def _apply_defaults(config, label, default_objectclasses):
         logger.info(
             "%s.objectClasses was empty — set to %r",
             label, default_objectclasses)
-
-
-def upgrade_1100_to_2000(setup_tool):
-    """Migrate a 1.x install to 2.x.
-
-    The 2.x line replaces the YAFOWIL-based control panel with a
-    native SENAITE form. The PAS plugin (`pasldap` in `acl_users`) and
-    its persistent configuration are unchanged. Only the rendering
-    layer changed.
-
-    What this step does:
-
-    - Re-import the senaite.ldap controlpanel profile so the
-      "LDAP / Active Directory" entry appears in Site Setup. The 1.x
-      configlet was registered by
-      ``pas.plugins.ldap.plonecontrolpanel``, which we no longer
-      install; without re-importing here the configlet would silently
-      disappear on upgrade.
-    - Remove orphan `yafowil` / `plone.bundles/yafowil` registry
-      records left by the upstream profile.
-    - Leave the `pasldap` PAS plugin and its persistent
-      `ILDAPProps` / `ILDAPUsersConfig` / `ILDAPGroupsConfig`
-      configuration untouched.
-    """
-    portal = setup_tool.aq_inner.aq_parent
-    import_controlpanel(setup_tool)
-    drop_yafowil_registry_records(portal)
-
-
-def upgrade_2000_to_2010(setup_tool):
-    """Rename the controlpanel views: ``plone_ldap*`` → ``senaite_ldap*``.
-
-    The 2.0 profile registered the configlet at
-    ``@@plone_ldapcontrolpanel``. The views were renamed to drop the
-    ``plone_`` prefix; re-import the controlpanel profile so existing
-    Site Setup configlets point at the new URL.
-    """
-    import_controlpanel(setup_tool)
-
-
-def import_controlpanel(setup_tool):
-    """Re-import the ``controlpanel`` GenericSetup step from the
-    senaite.ldap default profile so the configlet entry is registered
-    (and so the title / URL update if we ever change them).
-    """
-    setup_tool.runImportStepFromProfile(
-        "profile-senaite.ldap:default", "controlpanel")
-    logger.info("Re-imported senaite.ldap controlpanel profile")
-
-
-def drop_yafowil_registry_records(portal):
-    """Delete every registry record matching a key in REGISTRY_KEYS
-    that is *not* prefixed with ``pas.plugins.ldap``.
-
-    The 2.x setuphandlers REGISTRY_KEYS list contains both the
-    ``pas.plugins.ldap`` prefix (which we keep — it's the PAS plugin
-    configuration we still use) and the YAFOWIL prefixes (which we
-    purge). The uninstall handler iterates the same list; this
-    upgrade step only purges the YAFOWIL part.
-    """
-    registry = portal.portal_registry
-    yafowil_prefixes = [
-        key for key in REGISTRY_KEYS
-        if not key.startswith("pas.plugins.ldap")
-    ]
-    removed = 0
-    for record_key in list(registry.records.keys()):
-        for prefix in yafowil_prefixes:
-            if record_key.startswith(prefix):
-                del registry.records[record_key]
-                removed += 1
-                break
-    if removed:
-        logger.info(
-            "Removed %d orphan YAFOWIL registry records" % removed)
-    else:
-        logger.info("No orphan YAFOWIL registry records to remove")
