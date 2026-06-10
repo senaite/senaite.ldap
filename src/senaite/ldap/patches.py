@@ -35,6 +35,26 @@ def _coerce_attrs(value):
         return {}
 
 
+def _looks_like_paged_response(raw):
+    """Return True if ``raw`` matches the ``(results, cookie)`` shape
+    that ``base.LDAPCommunicator.search`` produces when a
+    SimplePagedResultsControl is attached to the LDAP response.
+
+    A real result list, by contrast, is a list of ``(dn, attrs)``
+    tuples whose first element is the raw DN bytes/str. We use that
+    distinction to avoid false positives: a flat result list whose
+    first element happens to be a 2-tuple shouldn't be unwrapped.
+    """
+    if not isinstance(raw, tuple) or len(raw) != 2:
+        return False
+    results, cookie = raw
+    if not isinstance(results, list):
+        return False
+    # Cookie is a bytes/str token (often empty). A real first-entry
+    # would be a (dn_bytes, attrs) tuple — definitely not bytes/str.
+    return isinstance(cookie, (bytes, str))
+
+
 def _is_valid_entry(entry):
     """Return True if ``entry`` looks like a search result with a
     non-None DN and at least an attributes dict.
@@ -101,22 +121,24 @@ def safe_ldap_session_search(self, queryFilter='(objectClass=*)',
         cookie,
     )
 
-    if page_size:
-        # The communicator returns either ``(results, cookie)`` when
-        # the server included a paged-results control in the
-        # response, or a flat results list when it didn't. Detect by
-        # shape — DO NOT try to unpack a flat list of N results into
-        # ``res, cookie`` because that throws away the actual data
-        # whenever the server ignores our paged-results request
-        # (LLDAP being one such server).
-        if (isinstance(raw, tuple) and len(raw) == 2
-                and not (raw and isinstance(raw[0], (bytes, str)))):
-            res, cookie = raw
-        else:
-            res = raw
-            cookie = None
+    # The communicator can return ``(results, cookie)`` even when we
+    # did NOT ask for paging — LLDAP attaches a SimplePagedResultsControl
+    # to every response, and ``base.LDAPCommunicator`` reflexively
+    # unwraps it into a tuple. Upstream's session ignores this case and
+    # treats the tuple as the result list, which then iterates over
+    # ``(results_list, cookie_bytes)`` and yields exactly one
+    # misshapen "entry" (the *first* hit) before the cookie is dropped
+    # as invalid — the visible symptom is searches that always return
+    # one result, no matter how many entries the server actually sent.
+    # Detect the (results, cookie) tuple shape on every call, not just
+    # when ``page_size`` is truthy.
+    if _looks_like_paged_response(raw):
+        res, response_cookie = raw
     else:
         res = raw
+        response_cookie = None
+    if page_size:
+        cookie = response_cookie
 
     try:
         # Coerce every retained entry to a 2-tuple (dn, attrs_dict)
