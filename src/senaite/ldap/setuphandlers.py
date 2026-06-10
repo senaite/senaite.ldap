@@ -4,10 +4,13 @@ from Products.PluggableAuthService.interfaces.plugins \
     import IUserAdderPlugin
 from senaite.ldap import logger
 
-DEPENDENCIES = [
-    "pas.plugins.ldap",
-]
-
+# Registry key prefixes the uninstall handler and the 1.x -> 2.x
+# upgrade step walk to scrub leftovers:
+# - ``pas.plugins.ldap`` was the persistent settings namespace used by
+#   the upstream plugin; we still write to ``pas.plugins.ldap.memcached``
+#   for back-compat with installs that have a value there.
+# - ``yafowil`` / ``plone.bundles/yafowil`` are 1.x noise from the
+#   dropped ``plonecontrolpanel`` profile.
 REGISTRY_KEYS = [
     "pas.plugins.ldap",
     "yafowil",
@@ -32,12 +35,10 @@ def install(context):
 def deactivate_user_adder(portal):
     """Deactivate `IUserAdderPlugin` on the `pasldap` plugin.
 
-    `pas.plugins.ldap` registers an `IUserAdderPlugin` (`doAddUser`)
-    on the LDAP plugin, but the implementation is a stub that always
-    returns False (see ``pas/plugins/ldap/plugin.py``: the body is
-    ``# XXX`` + ``return False``). Leaving it active misleads admins:
-    the "User_Adder" checkbox shows up in the ZMI Activate tab and
-    the Plone "add user" form looks like it should create LDAP users
+    The vendored `LDAPPlugin.doAddUser` is a stub (returns False).
+    Leaving the interface active would mislead admins: the
+    "User_Adder" checkbox shows up in the ZMI Activate tab and the
+    Plone "add user" form looks like it should create LDAP users
     when it actually falls through to the local user store.
 
     Idempotent: no-op when already deactivated.
@@ -218,24 +219,17 @@ def _snapshot_active_interfaces(plugins, plugin_id):
 
 
 def uninstall_pas_plugin(portal):
-    """Uninstall pas.plugins.ldap plugin
-    """
-    qi = portal.portal_quickinstaller
-    # manually uninstall it from the quickinstaller tool
-    for dep in DEPENDENCIES:
-        try:
-            qi.uninstallProducts([dep])
-        except AttributeError:
-            pass
+    """Remove the vendored PAS plugin and scrub registry leftovers.
 
-    # Manually remove the PAS plugin from acl_users
+    :param portal: Plone site root.
+    """
     aclu = portal.acl_users
-    plugin = "pasldap"
-    if plugin in aclu.objectIds():
-        aclu.manage_delObjects(["pasldap"])
+    if PLUGIN_ID in aclu.objectIds():
+        aclu.manage_delObjects([PLUGIN_ID])
 
     registry = portal.portal_registry
-    for key, record in registry.records.items():
-        for to_delete in REGISTRY_KEYS:
-            if key.startswith(to_delete):
+    for key in list(registry.records.keys()):
+        for prefix in REGISTRY_KEYS:
+            if key.startswith(prefix):
                 del registry.records[key]
+                break
