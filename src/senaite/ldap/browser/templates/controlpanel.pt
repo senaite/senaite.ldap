@@ -484,6 +484,29 @@ fullname=cn</textarea>
         <div class="field-row">
 
           <div class="form-group">
+            <div class="custom-control custom-checkbox">
+              <input type="checkbox" class="custom-control-input"
+                     id="f-groups-enabled" name="groups.enabled" value="1"
+                     tal:attributes="checked python:groups['enabled'] and 'checked' or None" />
+              <label class="custom-control-label" for="f-groups-enabled"
+                     i18n:translate="">Expose LDAP groups in SENAITE</label>
+            </div>
+            <small class="form-text text-muted helptext"
+                   i18n:translate="">
+              When unchecked, LDAP groups stop appearing in the user
+              group preferences and other group listings. LDAP users
+              and the configuration below are untouched -- only the
+              four group-related PAS plugin interfaces
+              (<code>IGroupsPlugin</code>,
+              <code>IGroupEnumerationPlugin</code>,
+              <code>IGroupIntrospection</code>,
+              <code>IGroupManagement</code>) are deactivated.
+            </small>
+          </div>
+
+          <hr/>
+
+          <div class="form-group">
             <label for="f-groups-basedn" i18n:translate="">Base DN</label>
             <div class="input-group">
               <input id="f-groups-basedn" type="text"

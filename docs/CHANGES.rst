@@ -9,6 +9,7 @@ YAFOWIL-based control panel replaced with a native SENAITE form. The
 installed. Existing ``pasldap`` plugin configuration is untouched.
 See ``docs/2.x-plan.md``.
 
+- #20 Groups tab: checkbox to expose / hide LDAP groups in SENAITE
 - #19 Sticky control-panel tab: fire Bootstrap's tab plugin via synthetic click
 - #18 Move monkey patches into a package with one submodule per target
 - #17 Remove the LDAP / Active Directory configlet on uninstall
