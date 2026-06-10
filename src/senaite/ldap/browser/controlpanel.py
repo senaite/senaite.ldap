@@ -23,6 +23,11 @@ from node.ext.ldap.session import LDAPSession
 from odict import odict
 from Products.CMFCore.utils import getToolByName
 from Products.Five.browser import BrowserView
+from Products.PlonePAS.interfaces.group import IGroupIntrospection
+from Products.PlonePAS.interfaces.group import IGroupManagement
+from Products.PluggableAuthService.interfaces.plugins \
+    import IGroupEnumerationPlugin
+from Products.PluggableAuthService.interfaces.plugins import IGroupsPlugin
 from Products.statusmessages.interfaces import IStatusMessage
 from senaite.ldap import logger
 from senaite.ldap import messageFactory as _
@@ -30,6 +35,19 @@ from zExceptions import NotFound
 
 
 PLUGIN_ID = "pasldap"
+
+# The four PAS plugin interfaces that together expose LDAP groups in
+# SENAITE: enumeration (group listings), introspection (lookup by id),
+# membership (getGroupsForPrincipal -- the one that drives the user
+# group preferences page), management (add/remove members). We toggle
+# all four atomically so the admin doesn't have to think about which
+# UI surfaces depend on which interface.
+GROUP_PLUGIN_INTERFACES = (
+    IGroupsPlugin,
+    IGroupEnumerationPlugin,
+    IGroupIntrospection,
+    IGroupManagement,
+)
 
 SCOPES = (
     (BASE, "BASE"),
@@ -121,6 +139,39 @@ def _to_bool(value):
     if value in (None, "", "0", "false", "False", "off", "no"):
         return False
     return True
+
+
+def _is_plugin_active(plugins, iface, plugin_id):
+    """Return True when `plugin_id` is registered on `iface`.
+
+    `plugins.listPluginIds(iface)` returns the activated plugin IDs
+    for a given PAS interface in priority order.
+
+    :param plugins: The `acl_users.plugins` registry.
+    :param iface: PAS plugin interface (e.g. `IGroupsPlugin`).
+    :param plugin_id: PAS plugin id (e.g. ``"pasldap"``).
+    :rtype: bool
+    """
+    try:
+        active_ids = plugins.listPluginIds(iface)
+    except KeyError:
+        return False
+    return plugin_id in active_ids
+
+
+def _set_plugin_active(plugins, iface, plugin_id, active):
+    """Activate or deactivate `plugin_id` on `iface`. Idempotent.
+
+    :param plugins: The `acl_users.plugins` registry.
+    :param iface: PAS plugin interface.
+    :param plugin_id: PAS plugin id.
+    :param active: True to register on `iface`, False to deregister.
+    """
+    currently_active = _is_plugin_active(plugins, iface, plugin_id)
+    if active and not currently_active:
+        plugins.activatePlugin(iface, plugin_id)
+    elif not active and currently_active:
+        plugins.deactivatePlugin(iface, plugin_id)
 
 
 class LDAPControlPanel(BrowserView):
@@ -221,6 +272,7 @@ class LDAPControlPanel(BrowserView):
     def groups_data(self):
         groups = self.groups
         return {
+            "enabled": self.groups_enabled(),
             "baseDN": getattr(groups, "baseDN", "") or "",
             "scope": str(getattr(groups, "scope", SUBTREE)),
             "queryFilter": getattr(groups, "queryFilter", "") or "",
@@ -230,6 +282,27 @@ class LDAPControlPanel(BrowserView):
                 getattr(groups, "memberOfSupport", False)),
             "attrmap": _format_attrmap(getattr(groups, "attrmap", None)),
         }
+
+    def groups_enabled(self):
+        """Return True when LDAP groups are exposed in SENAITE.
+
+        Reads the activation state of `IGroupsPlugin` (the interface
+        that drives `getGroupsForPrincipal` -- the membership lookup
+        that surfaces LDAP groups in the user group preferences page).
+        The other three group interfaces are toggled in lockstep on
+        save, so this single signal is enough for display.
+        """
+        plugins = self._pas_plugins()
+        if plugins is None:
+            return False
+        return _is_plugin_active(plugins, IGroupsPlugin, PLUGIN_ID)
+
+    def _pas_plugins(self):
+        """Return the `acl_users.plugins` registry, or None."""
+        acl_users = getToolByName(self.context, "acl_users", None)
+        if acl_users is None:
+            return None
+        return getattr(acl_users, "plugins", None)
 
     def connection_test(self):
         """Run a non-destructive connectivity probe against the
@@ -312,9 +385,27 @@ class LDAPControlPanel(BrowserView):
         groups.recursiveGroups = False
         groups.memberOfExternalGroupDNs = []
 
+        self._set_group_plugins_active(_to_bool(form.get("groups.enabled")))
+
         IStatusMessage(self.request).add(
             _(u"LDAP settings saved."), type="info")
         logger.info("LDAP settings saved by user")
+
+    def _set_group_plugins_active(self, active):
+        """Activate or deactivate `pasldap` on the four group PAS
+        interfaces in lockstep.
+
+        :param active: True to expose LDAP groups in SENAITE, False
+            to hide them.
+        """
+        plugins = self._pas_plugins()
+        if plugins is None:
+            return
+        for iface in GROUP_PLUGIN_INTERFACES:
+            _set_plugin_active(plugins, iface, PLUGIN_ID, active)
+        logger.info(
+            "LDAP group plugins %s for %r",
+            active and "activated" or "deactivated", PLUGIN_ID)
 
     # ------------------------------------------------------------------
     # connection test handler
