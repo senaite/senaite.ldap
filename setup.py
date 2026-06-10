@@ -38,11 +38,10 @@ setup(
     zip_safe=False,
     install_requires=[
         "senaite.lims",
-        # We pin `pas.plugins.ldap` to 1.8.2 and pull only the PAS
-        # plugin out of it. Its `plonecontrolpanel` sub-package
-        # depends on YAFOWIL and is intentionally not included in
-        # our ZCML; we render the control panel ourselves.
-        "pas.plugins.ldap==1.8.2",
+        # PAS plugin and supporting code is vendored under
+        # `senaite.ldap.pas`; we no longer depend on
+        # `pas.plugins.ldap` at runtime. The YAFOWIL pins that
+        # workaround its declared deps are gone with it.
         "node.ext.ldap==1.2",
         "python-ldap==3.3.1",
         "pyasn1==0.4.8",
@@ -54,20 +53,6 @@ setup(
         "python-memcached==1.59",
         # plumber >= 2.0.0 does not support Python 2.x anymore
         "plumber<2.0.0",
-        # YAFOWIL is no longer used by our code, but
-        # `pas.plugins.ldap==1.8.2` declares it as a hard runtime
-        # dependency in its egg metadata. Without these pins
-        # easy_install pulls the latest `yafowil` (4.x, Py3 only) and
-        # the buildout install fails before we even get to load any
-        # ZCML. The packages end up on disk but are never imported:
-        # our ZCML does not include `yafowil.plone`'s configuration,
-        # and our control panel uses no YAFOWIL code path.
-        "yafowil==3.1.1",
-        "yafowil.plone==4.0.0a4",
-        "yafowil.widget.array==1.7",
-        "yafowil.widget.dict==1.8",
-        "yafowil.yaml==2.0",
-        "webresource==1.2",
         "setuptools",
     ],
     extras_require={

@@ -12,4 +12,14 @@
   <adapter factory=".properties.UsersConfig" />
   <adapter factory=".properties.GroupsConfig" />
 
+  <!-- Memcached server list (plone.app.registry-backed) -->
+  <utility
+      factory=".cache.CacheSettingsRecordProvider"
+      provides=".interfaces.ICacheSettingsRecordProvider" />
+
+  <!-- Memcached client factory consumed by node.ext.ldap -->
+  <utility
+      factory=".cache.cacheProviderFactory"
+      provides="node.ext.ldap.interfaces.ICacheProviderFactory" />
+
 </configure>

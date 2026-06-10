@@ -9,6 +9,7 @@ YAFOWIL-based control panel replaced with a native SENAITE form. The
 installed. Existing ``pasldap`` plugin configuration is untouched.
 See ``docs/2.x-plan.md``.
 
+- #25 Drop pas.plugins.ldap and YAFOWIL runtime dependencies
 - #24 Migrate persisted pasldap instance to senaite.ldap.pas.plugin.LDAPPlugin
 - #23 Move vendored PAS plugin modules into senaite.ldap.pas package
 - #22 Vendor pas.plugins.ldap as senaite.ldap.plugin (dormant; no migration yet)

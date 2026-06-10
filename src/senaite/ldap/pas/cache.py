@@ -24,6 +24,10 @@ import time
 from bda.cache import Memcached
 from bda.cache import NullCache
 from node.ext.ldap.interfaces import ICacheProviderFactory
+from persistent import Persistent
+from plone.registry import field
+from plone.registry import Record
+from plone.registry.interfaces import IRegistry
 from senaite.ldap.pas.interfaces import ICacheSettingsRecordProvider
 from senaite.ldap.pas.interfaces import ILDAPPlugin
 from senaite.ldap.pas.interfaces import IPluginCacheHandler
@@ -32,6 +36,13 @@ from zope.component import adapter
 from zope.component import queryUtility
 from zope.globalrequest import getRequest
 from zope.interface import implementer
+
+
+# Reuse upstream's registry key so existing installs continue to
+# read / write the memcached server list they already have. We can
+# rename this to "senaite.ldap.memcached" in a future pass plus a
+# data migration; for now compatibility wins.
+MEMCACHED_REGISTRY_KEY = "pas.plugins.ldap.memcached"
 
 
 VOLATILE_CACHE_MAXAGE = 10  # seconds
@@ -189,3 +200,32 @@ class VolatilePluginCache(RequestPluginCache):
             delattr(self.context, self._key())
         except AttributeError:
             pass
+
+
+class _NullRecord(object):
+    """Fallback record when `plone.app.registry` is unavailable."""
+    value = ""
+
+
+@implementer(ICacheSettingsRecordProvider)
+class CacheSettingsRecordProvider(Persistent):
+    """Memcached server list, stored in `plone.app.registry`.
+
+    Returns the `plone.registry.Record` at
+    `MEMCACHED_REGISTRY_KEY`, creating it on first access. Used by
+    `LDAPProps.memcached` (read) and the control panel save handler
+    (write). Replaces upstream's
+    `pas.plugins.ldap.plonecontrolpanel.cache.CacheSettingsRecordProvider`
+    so we no longer depend on the upstream `plonecontrolpanel`
+    sub-package.
+    """
+
+    def __call__(self):
+        registry = queryUtility(IRegistry)
+        if not registry:
+            return _NullRecord()
+        records = registry.records
+        if MEMCACHED_REGISTRY_KEY not in records:
+            records[MEMCACHED_REGISTRY_KEY] = Record(
+                field.TextLine(title=u"servers, delimited by space"))
+        return records[MEMCACHED_REGISTRY_KEY]
