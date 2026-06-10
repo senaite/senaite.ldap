@@ -672,4 +672,36 @@
   if (cacheTabLink) {
     loadCacheStats();
   }
+
+  // ====================================================================
+  // 4) Sticky active tab across reloads via ?tab= URL parameter
+  // ====================================================================
+
+  var tabLinks = document.querySelectorAll(
+    ".senaite-ldap-form .nav-tabs a.nav-link[data-toggle='tab']");
+
+  function activateTab(href) {
+    var link = document.querySelector(
+      ".senaite-ldap-form .nav-tabs a.nav-link[href='" + href + "']");
+    var pane = document.querySelector(".senaite-ldap-form " + href);
+    if (!link || !pane) return;
+    tabLinks.forEach(function (l) { l.classList.remove("active"); });
+    document.querySelectorAll(".senaite-ldap-form .tab-pane")
+      .forEach(function (p) { p.classList.remove("active", "show"); });
+    link.classList.add("active");
+    pane.classList.add("active", "show");
+  }
+
+  tabLinks.forEach(function (link) {
+    link.addEventListener("click", function () {
+      var href = link.getAttribute("href");
+      if (!href) return;
+      var url = new URL(window.location.href);
+      url.searchParams.set("tab", href.replace(/^#/, ""));
+      window.history.replaceState({}, "", url.toString());
+    });
+  });
+
+  var urlTab = new URL(window.location.href).searchParams.get("tab");
+  if (urlTab) activateTab("#" + urlTab);
 })();
