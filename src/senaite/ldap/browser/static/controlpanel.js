@@ -483,4 +483,193 @@
     });
     return table;
   }
+
+  // ====================================================================
+  // 3) Cache insights + purge (Cache tab)
+  // ====================================================================
+
+  var STAT_LABELS = {
+    version: "Server version",
+    uptime: "Uptime",
+    curr_items: "Items",
+    total_items: "Total items written",
+    bytes: "Bytes used",
+    limit_maxbytes: "Bytes available",
+    cmd_get: "GET commands",
+    cmd_set: "SET commands",
+    get_hits: "Hits",
+    get_misses: "Misses",
+    hit_rate: "Hit rate",
+    evictions: "Evictions",
+    curr_connections: "Connections"
+  };
+
+  function formatStat(key, value) {
+    if (value == null) return "";
+    if (key === "uptime") {
+      var s = Number(value);
+      if (!isFinite(s)) return String(value);
+      var d = Math.floor(s / 86400);
+      var h = Math.floor((s % 86400) / 3600);
+      var m = Math.floor((s % 3600) / 60);
+      var parts = [];
+      if (d) parts.push(d + "d");
+      if (h) parts.push(h + "h");
+      if (m) parts.push(m + "m");
+      if (!parts.length) parts.push((s % 60) + "s");
+      return parts.join(" ");
+    }
+    if (key === "bytes" || key === "limit_maxbytes") {
+      return formatBytes(value);
+    }
+    if (key === "hit_rate") {
+      return (value * 100).toFixed(1) + "%";
+    }
+    if (typeof value === "number") {
+      return value.toLocaleString();
+    }
+    return String(value);
+  }
+
+  function formatBytes(n) {
+    var units = ["B", "KiB", "MiB", "GiB", "TiB"];
+    var i = 0;
+    var v = Number(n);
+    if (!isFinite(v)) return String(n);
+    while (v >= 1024 && i < units.length - 1) {
+      v /= 1024;
+      i += 1;
+    }
+    return v.toFixed(i === 0 ? 0 : 1) + " " + units[i];
+  }
+
+  function renderCacheStats(data) {
+    var section = document.getElementById("cache-status-section");
+    var panel = document.getElementById("cache-stats-panel");
+    if (!panel) return;
+
+    // Hide the whole Cache status block when memcache isn't in use —
+    // no point showing an empty table or a "not configured" notice.
+    if (!data.configured || !data.cache_enabled) {
+      if (section) section.style.display = "none";
+      while (panel.firstChild) panel.removeChild(panel.firstChild);
+      return;
+    }
+    if (section) section.style.display = "";
+
+    while (panel.firstChild) panel.removeChild(panel.firstChild);
+
+    if (!data.servers || data.servers.length === 0) {
+      var none = document.createElement("p");
+      none.className = "text-muted small mb-0";
+      none.textContent = "No servers reported.";
+      panel.appendChild(none);
+      return;
+    }
+
+    data.servers.forEach(function (srv) {
+      panel.appendChild(renderServerCard(srv));
+    });
+  }
+
+  function renderServerCard(srv) {
+    var card = document.createElement("div");
+    card.className = "card mb-2";
+
+    var header = document.createElement("div");
+    header.className = "card-header py-2 d-flex align-items-center";
+    var name = document.createElement("span");
+    name.className = "text-monospace mr-2";
+    name.textContent = srv.name;
+    header.appendChild(name);
+    var badge = document.createElement("span");
+    badge.className = "badge " +
+      (srv.ok ? "badge-success" : "badge-danger");
+    badge.textContent = srv.ok ? "reachable" : "unreachable";
+    header.appendChild(badge);
+    card.appendChild(header);
+
+    if (!srv.ok || !srv.stats || Object.keys(srv.stats).length === 0) {
+      var body = document.createElement("div");
+      body.className = "card-body py-2 text-muted small";
+      body.textContent = srv.ok ?
+        "Reachable but reported no stats." :
+        "Could not contact this server.";
+      card.appendChild(body);
+      return card;
+    }
+
+    var table = document.createElement("table");
+    table.className = "table table-sm mb-0";
+    Object.keys(STAT_LABELS).forEach(function (key) {
+      if (!(key in srv.stats)) return;
+      var tr = document.createElement("tr");
+      var th = document.createElement("th");
+      th.className = "pl-3";
+      th.style.width = "12rem";
+      th.textContent = STAT_LABELS[key];
+      tr.appendChild(th);
+      var td = document.createElement("td");
+      td.className = "text-monospace";
+      td.textContent = formatStat(key, srv.stats[key]);
+      tr.appendChild(td);
+      table.appendChild(tr);
+    });
+    card.appendChild(table);
+    return card;
+  }
+
+  function loadCacheStats() {
+    var status = document.querySelector("[data-status='cache-status']");
+    if (status) status.textContent = "Loading…";
+    fetch(BASE_URL + "/@@senaite_ldap_cache_stats",
+          { credentials: "same-origin" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (status) status.textContent = "";
+        renderCacheStats(data);
+      })
+      .catch(function (err) {
+        if (status) status.textContent = "Stats failed: " + err;
+      });
+  }
+
+  function flushCache() {
+    var status = document.querySelector("[data-status='cache-status']");
+    if (!window.confirm(
+        "Purge ALL keys from the configured memcached? Every cached " +
+        "LDAP lookup will be evicted; the next request rebuilds the " +
+        "cache from scratch.")) {
+      return;
+    }
+    if (status) status.textContent = "Purging…";
+    fetch(BASE_URL + "/@@senaite_ldap_cache_flush",
+          { credentials: "same-origin", method: "POST" })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (status) status.textContent = data.message || "";
+        if (data.ok) loadCacheStats();
+      })
+      .catch(function (err) {
+        if (status) status.textContent = "Purge failed: " + err;
+      });
+  }
+
+  document.querySelectorAll("[data-action='cache-refresh']")
+    .forEach(function (btn) {
+      btn.addEventListener("click", loadCacheStats);
+    });
+  document.querySelectorAll("[data-action='cache-flush']")
+    .forEach(function (btn) {
+      btn.addEventListener("click", flushCache);
+    });
+
+  // Always load once on page init: the stats response also drives
+  // section visibility, so we need it even when the Cache tab isn't
+  // the active one (e.g. restored from sticky tab state, where no
+  // click / shown.bs.tab fires).
+  var cacheTabLink = document.querySelector("[href='#tab-cache']");
+  if (cacheTabLink) {
+    loadCacheStats();
+  }
 })();
