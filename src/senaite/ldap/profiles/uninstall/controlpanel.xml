@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<object name="portal_controlpanel"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+
+  <configlet title="LDAP / Active Directory"
+             action_id="LDAP_Configuration"
+             appId="senaite.ldap"
+             category="plone-users"
+             condition_expr=""
+             url_expr="string:${portal_url}/@@senaite_ldapcontrolpanel"
+             visible="True"
+             i18n:domain="senaite.ldap"
+             i18n:attributes="title"
+             remove="True">
+    <permission>Manage Portal</permission>
+  </configlet>
+
+</object>
