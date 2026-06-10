@@ -27,6 +27,7 @@ from node.ext.ldap import LDAPNode
 from node.ext.ldap.interfaces import ILDAPGroupsConfig
 from node.ext.ldap.interfaces import ILDAPProps
 from node.ext.ldap.interfaces import ILDAPUsersConfig
+from node.ext.ldap.scope import BASE
 from node.ext.ldap.scope import SUBTREE
 from Products.CMFCore.utils import getToolByName
 from Products.CMFPlone.utils import safe_unicode
@@ -162,40 +163,56 @@ class LDAPDiscoverObjectClassesView(_DiscoveryBase):
                 "object_classes": [],
             })
 
+        from node.ext.ldap.session import LDAPSession
+        session = LDAPSession(self.props)
+
+        # Step 1: list DNs under the base (SUBTREE).
         try:
-            node = LDAPNode(base_dn, self.props)
-            node.search_scope = SUBTREE
-            # No attrlist — get back a flat list of DNs. Trying to
-            # ask for objectClass directly was unreliable: LLAP
-            # honours the request shape but the returned attrs
-            # payload is keyed in a way we couldn't introspect
-            # consistently (case + container shape variations).
-            # Round-trip per sampled DN via node_by_dn instead; it's
-            # only SAMPLE_SIZE (100) extra requests at most.
-            dns = node.search(queryFilter=u"(objectClass=*)")
+            entries = session.search(
+                queryFilter=u"(objectClass=*)",
+                scope=SUBTREE,
+                baseDN=base_dn,
+            )
         except Exception as exc:
             logger.warn(
-                "Object-class discovery failed for %s base %r — %s",
-                which, base_dn, exc)
+                "Object-class discovery (listing) failed for %s "
+                "base %r — %s", which, base_dn, exc)
             return json.dumps({
                 "ok": False,
                 "error": str(exc),
                 "object_classes": [],
             })
 
+        dns = []
+        for entry in entries:
+            if not entry or len(entry) < 1:
+                continue
+            dns.append(_safe_unicode(entry[0]))
+
+        # Step 2: for each sampled DN, do a BASE-scope fetch for its
+        # full attrs. Bypasses node.ext.ldap's tree-walking
+        # abstractions which proved brittle against LLDAP — direct
+        # session.search calls give us back the attrs payload our
+        # patched safe_ldap_session_search has already normalised to
+        # a dict via _coerce_attrs.
         seen = set()
         sampled = 0
         for dn in dns:
             if sampled >= SAMPLE_SIZE:
                 break
             try:
-                child = node.node_by_dn(_safe_unicode(dn), strict=True)
-                attrs = child.attrs
+                base_entries = session.search(
+                    queryFilter=u"(objectClass=*)",
+                    scope=BASE,
+                    baseDN=dn,
+                )
             except Exception:
                 continue
-            ocs = _extract_object_classes(attrs)
-            if ocs:
-                for oc in ocs:
+            for entry in base_entries:
+                if not entry or len(entry) < 2:
+                    continue
+                attrs = entry[1]
+                for oc in _extract_object_classes(attrs):
                     seen.add(_safe_unicode(oc))
             sampled += 1
 
