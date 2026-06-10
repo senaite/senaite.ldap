@@ -7,8 +7,85 @@
 
 """Upgrade handlers for senaite.ldap."""
 
+from node.ext.ldap.interfaces import ILDAPGroupsConfig
+from node.ext.ldap.interfaces import ILDAPUsersConfig
+from node.ext.ldap.scope import BASE
+from node.ext.ldap.scope import SUBTREE
+from Products.CMFCore.utils import getToolByName
 from senaite.ldap import logger
 from senaite.ldap.setuphandlers import REGISTRY_KEYS
+
+
+PLUGIN_ID = "pasldap"
+
+USERS_DEFAULT_OBJECTCLASSES = [u"inetOrgPerson"]
+GROUPS_DEFAULT_OBJECTCLASSES = [u"groupOfNames"]
+
+
+def upgrade_2010_to_2020(setup_tool):
+    """Apply opinionated defaults for the four ``pas.plugins.ldap``
+    fields that ship at upstream-noise values and that the SENAITE
+    control panel doesn't override on first save.
+
+    The upstream defaults for ``users.scope`` and ``groups.scope`` are
+    ``BASE`` (0), which only ever returns the base DN entry itself —
+    no users, no groups. ``objectClasses`` ships empty, which makes
+    member-attribute discovery fail with
+    ``Can not lookup member attribute for object-classes: []``.
+
+    This step rewrites those fields *only when they're still at the
+    upstream-noise state*:
+
+    - ``scope == BASE`` → ``SUBTREE``
+    - ``objectClasses`` empty → a sensible default
+      (``inetOrgPerson`` for users, ``groupOfNames`` for groups)
+
+    A deliberately-set BASE or a non-empty ``objectClasses`` is left
+    alone. Idempotent — re-running the step is a no-op once the
+    fields hold real values.
+    """
+    portal = setup_tool.aq_inner.aq_parent
+    plugin = _get_plugin(portal)
+    if plugin is None:
+        logger.info("pasldap plugin not installed; skipping defaults")
+        return
+
+    _apply_defaults(
+        ILDAPUsersConfig(plugin),
+        label="users",
+        default_objectclasses=USERS_DEFAULT_OBJECTCLASSES,
+    )
+    _apply_defaults(
+        ILDAPGroupsConfig(plugin),
+        label="groups",
+        default_objectclasses=GROUPS_DEFAULT_OBJECTCLASSES,
+    )
+
+
+def _get_plugin(portal):
+    acl_users = getToolByName(portal, "acl_users", None)
+    if acl_users is None:
+        return None
+    return getattr(acl_users, PLUGIN_ID, None)
+
+
+def _apply_defaults(config, label, default_objectclasses):
+    """Rewrite ``scope`` / ``objectClasses`` in place when at noise.
+
+    Logs every effective change so an admin can see what shifted on
+    upgrade.
+    """
+    if getattr(config, "scope", BASE) == BASE:
+        config.scope = SUBTREE
+        logger.info(
+            "%s.scope was BASE — set to SUBTREE", label)
+
+    object_classes = list(getattr(config, "objectClasses", []) or [])
+    if not object_classes:
+        config.objectClasses = list(default_objectclasses)
+        logger.info(
+            "%s.objectClasses was empty — set to %r",
+            label, default_objectclasses)
 
 
 def upgrade_1100_to_2000(setup_tool):

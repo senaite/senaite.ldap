@@ -3,6 +3,20 @@
     xmlns:genericsetup="http://namespaces.zope.org/genericsetup">
 
   <genericsetup:upgradeStep
+      title="senaite.ldap 2.0.0: set sane defaults for Users/Groups scope and objectClasses"
+      description="The upstream pas.plugins.ldap defaults for users.scope
+                   and groups.scope are BASE — useless against any real
+                   directory, and objectClasses ships empty. Apply
+                   opinionated defaults (SUBTREE + inetOrgPerson /
+                   groupOfNames) when the persisted values are still at
+                   the upstream-noise state, so a fresh install actually
+                   resolves users and groups."
+      source="2010"
+      destination="2020"
+      handler=".upgrade.upgrade_2010_to_2020"
+      profile="senaite.ldap:default"/>
+
+  <genericsetup:upgradeStep
       title="senaite.ldap 2.0.0: rename @@plone_ldap* views to @@senaite_ldap*"
       description="The controlpanel views now live under a senaite_
                    prefix instead of plone_. Re-import the controlpanel
