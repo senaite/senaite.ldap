@@ -644,6 +644,29 @@ fullname=cn</textarea>
             </div>
           </div>
 
+          <!-- Live cache stats + purge. Hydrated by JS on tab
+               activation; the whole section is hidden when no
+               memcached is configured or caching is disabled. -->
+          <div id="cache-status-section" style="display: none;">
+            <hr/>
+            <div class="d-flex align-items-center mb-2">
+              <h6 class="mb-0 mr-3"
+                  i18n:translate="">Cache status</h6>
+              <button type="button"
+                      class="btn btn-sm btn-outline-secondary mr-2"
+                      data-action="cache-refresh"
+                      i18n:translate="">Refresh</button>
+              <button type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      data-action="cache-flush"
+                      i18n:translate="">Purge cache</button>
+              <small class="text-muted ml-3"
+                     data-status="cache-status"></small>
+            </div>
+
+            <div id="cache-stats-panel"></div>
+          </div>
+
         </div>
       </div>
 

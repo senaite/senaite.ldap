@@ -81,6 +81,24 @@
         layer="senaite.ldap.interfaces.ISenaiteLdap"
         />
 
+    <!-- Cache JSON: per-server memcached stats (hits / items / bytes) -->
+    <browser:page
+        name="senaite_ldap_cache_stats"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+        class=".cache.LDAPCacheStatsView"
+        permission="cmf.ManagePortal"
+        layer="senaite.ldap.interfaces.ISenaiteLdap"
+        />
+
+    <!-- Cache JSON: flush_all (POST only) -->
+    <browser:page
+        name="senaite_ldap_cache_flush"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+        class=".cache.LDAPCacheFlushView"
+        permission="cmf.ManagePortal"
+        layer="senaite.ldap.interfaces.ISenaiteLdap"
+        />
+
     <!-- Static directory for js, css and image resources -->
     <plone:static
         directory="static"
