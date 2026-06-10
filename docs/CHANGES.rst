@@ -10,6 +10,7 @@ installed. Existing ``pasldap`` plugin configuration is untouched.
 See ``docs/2.x-plan.md``.
 
 - #11 Handle unsolicited paged-results response (LLDAP) — fixes "always 1 result"
+- #10 Apply sane defaults for users/groups scope and objectClasses on upgrade
 - #9 Factor inline JS into a static file; live AJAX status dot on the Server tab
 - #8 Detect base DN, mirror Users→Groups base, group picker for memberOf external DNs
 - #7 Discover LDAP object classes + live filter preview; rename @@plone_ → @@senaite_
