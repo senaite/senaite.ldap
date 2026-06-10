@@ -16,6 +16,34 @@
         layer="senaite.ldap.interfaces.ISenaiteLdap"
         />
 
+    <!-- LDAP Search / Inspector page -->
+    <browser:page
+        name="plone_ldapsearch"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+        class=".search.LDAPSearchView"
+        template="templates/search.pt"
+        permission="cmf.ManagePortal"
+        layer="senaite.ldap.interfaces.ISenaiteLdap"
+        />
+
+    <!-- LDAP Search JSON: results for a base + filter -->
+    <browser:page
+        name="plone_ldapsearch_results"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+        class=".search.LDAPSearchResultsView"
+        permission="cmf.ManagePortal"
+        layer="senaite.ldap.interfaces.ISenaiteLdap"
+        />
+
+    <!-- LDAP Search JSON: full attribute dump for a single DN -->
+    <browser:page
+        name="plone_ldapsearch_attrs"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+        class=".search.LDAPNodeAttrsView"
+        permission="cmf.ManagePortal"
+        layer="senaite.ldap.interfaces.ISenaiteLdap"
+        />
+
     <!-- Static directory for js, css and image resources -->
     <plone:static
         directory="static"

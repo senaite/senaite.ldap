@@ -1,0 +1,324 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="context/prefs_main_template/macros/master"
+      i18n:domain="senaite.ldap">
+<body>
+
+<metal:main metal:fill-slot="prefs_configlet_main"
+            tal:define="portal_url context/@@plone_portal_state/portal_url;
+                        users_base view/users_base;
+                        groups_base view/groups_base;">
+
+  <style>
+    .senaite-ldap-search .form-control { width: 100%; max-width: 100%; }
+    .senaite-ldap-search .result-row { cursor: pointer; }
+    .senaite-ldap-search .result-row.is-open { background: #eef4ff; }
+    .senaite-ldap-search .attrs-cell { padding-left: 2rem; }
+    .senaite-ldap-search .attrs-table {
+      font-size: 0.9rem;
+      border-spacing: 0;
+      border-collapse: collapse;
+    }
+    .senaite-ldap-search .attrs-table th {
+      text-align: right;
+      vertical-align: top;
+      padding: 0.15rem 0.6rem 0.15rem 0;
+      color: #6c757d;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .senaite-ldap-search .attrs-table td {
+      vertical-align: top;
+      padding: 0.15rem 0;
+      font-family: var(--bs-font-monospace, monospace);
+      word-break: break-all;
+    }
+    .senaite-ldap-search .attrs-table tr + tr th,
+    .senaite-ldap-search .attrs-table tr + tr td {
+      border-top: 1px solid #e9ecef;
+    }
+  </style>
+
+  <a id="setup-link" class="link-parent"
+     tal:attributes="href string:${context/absolute_url}/@@plone_ldapcontrolpanel"
+     i18n:translate="">LDAP / Active Directory</a>
+
+  <h1 i18n:translate="">LDAP Search &amp; Inspector</h1>
+
+  <p class="text-muted"
+     i18n:translate="">
+    Run RFC&nbsp;4515 search filters against the configured LDAP
+    directory. Click a result row to expand its full attribute set.
+    Results are capped at 200 entries — narrow your filter if you
+    hit the limit.
+  </p>
+
+  <div class="senaite-ldap-search">
+
+    <!-- form -->
+    <form id="ldap-search-form" class="card bg-light p-3 mb-3"
+          onsubmit="event.preventDefault(); ldapSearch.run();">
+      <div class="form-group">
+        <label class="text-muted small text-uppercase"
+               i18n:translate="">Search base</label>
+        <div class="form-row">
+          <div class="form-group col-md-3">
+            <select id="ls-base" class="form-control"
+                    onchange="ldapSearch.onBaseChange();">
+              <option value="users"
+                      i18n:translate="">Users</option>
+              <option value="groups"
+                      i18n:translate="">Groups</option>
+              <option value="custom"
+                      i18n:translate="">Custom base DN</option>
+            </select>
+          </div>
+          <div class="form-group col-md-9">
+            <input type="text" id="ls-base-dn"
+                   class="form-control text-monospace"
+                   disabled="disabled"
+                   tal:attributes="value users_base"
+                   placeholder="ou=people,dc=example,dc=com" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group col-md-9">
+          <label for="ls-filter"
+                 i18n:translate="">Filter</label>
+          <input type="text" id="ls-filter"
+                 class="form-control text-monospace"
+                 value="(objectClass=*)"
+                 placeholder="(uid=*)" />
+        </div>
+        <div class="form-group col-md-3">
+          <label for="ls-scope"
+                 i18n:translate="">Scope</label>
+          <select id="ls-scope" class="form-control">
+            <option value="sub" selected="selected">SUBTREE</option>
+            <option value="one">ONELEVEL</option>
+            <option value="base">BASE</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="d-flex">
+        <button type="submit" class="btn btn-primary"
+                i18n:translate="">Search</button>
+        <a class="btn btn-outline-secondary ml-2"
+           tal:attributes="href string:${context/absolute_url}/@@plone_ldapcontrolpanel"
+           i18n:translate="">Back to settings</a>
+      </div>
+    </form>
+
+    <!-- status / errors -->
+    <div id="ls-status" class="mb-3"></div>
+
+    <!-- results -->
+    <table id="ls-results" class="table table-sm d-none">
+      <thead class="thead-light">
+        <tr>
+          <th class="text-monospace"
+              i18n:translate="">DN</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+  </div>
+
+  <!-- Bridge from TAL into JS: emit configured base DNs as a data-* element
+       so the script below doesn't need any TAL substitution inline. -->
+  <span id="ls-bridge" class="d-none"
+        tal:attributes="data-users-base users_base;
+                        data-groups-base groups_base;
+                        data-self-url string:${context/absolute_url}/@@plone_ldapsearch"></span>
+
+  <script>
+    (function () {
+      var bridge = document.getElementById("ls-bridge");
+      var USERS_BASE = bridge.getAttribute("data-users-base") || "";
+      var GROUPS_BASE = bridge.getAttribute("data-groups-base") || "";
+      var SELF_URL = bridge.getAttribute("data-self-url") || "";
+      var BASE_URL = SELF_URL.replace(/\/@@plone_ldapsearch$/, "");
+
+      window.ldapSearch = {
+
+        baseUrl: function () { return BASE_URL; },
+
+        onBaseChange: function () {
+          var base = document.getElementById("ls-base").value;
+          var input = document.getElementById("ls-base-dn");
+          if (base === "users") {
+            input.value = USERS_BASE;
+            input.disabled = true;
+          } else if (base === "groups") {
+            input.value = GROUPS_BASE;
+            input.disabled = true;
+          } else {
+            input.disabled = false;
+            input.focus();
+          }
+        },
+
+        setStatus: function (msg, level) {
+          var status = document.getElementById("ls-status");
+          while (status.firstChild) status.removeChild(status.firstChild);
+          if (!msg) return;
+          var div = document.createElement("div");
+          div.className = "alert alert-" + (level || "info") + " py-2 mb-0";
+          div.textContent = msg;
+          status.appendChild(div);
+        },
+
+        run: function () {
+          var base = document.getElementById("ls-base").value;
+          var baseDn = document.getElementById("ls-base-dn").value;
+          var filter = document.getElementById("ls-filter").value;
+          var scope = document.getElementById("ls-scope").value;
+
+          var url = this.baseUrl() + "/@@plone_ldapsearch_results"
+                  + "?base=" + encodeURIComponent(base)
+                  + "&base_dn=" + encodeURIComponent(baseDn)
+                  + "&filter=" + encodeURIComponent(filter)
+                  + "&scope=" + encodeURIComponent(scope);
+
+          this.setStatus("Searching…", "secondary");
+
+          var self = this;
+          fetch(url, { credentials: "same-origin" })
+            .then(function (r) { return r.json(); })
+            .then(function (data) { self.render(data); })
+            .catch(function (err) {
+              self.setStatus("Request failed: " + err, "danger");
+            });
+        },
+
+        render: function (data) {
+          var table = document.getElementById("ls-results");
+          var tbody = table.querySelector("tbody");
+          tbody.innerHTML = "";
+
+          if (!data.ok) {
+            this.setStatus(data.error || "Unknown error", "danger");
+            table.classList.add("d-none");
+            return;
+          }
+
+          var msg = data.count + " result" +
+                    (data.count === 1 ? "" : "s") +
+                    " from " + data.base;
+          if (data.truncated) {
+            msg += " (truncated)";
+          }
+          this.setStatus(msg, data.count ? "info" : "secondary");
+
+          if (data.count === 0) {
+            table.classList.add("d-none");
+            return;
+          }
+
+          for (var i = 0; i < data.dns.length; i++) {
+            var dn = data.dns[i];
+            var tr = document.createElement("tr");
+            tr.className = "result-row";
+            tr.setAttribute("data-dn", dn);
+            var td = document.createElement("td");
+            td.className = "text-monospace";
+            td.textContent = dn;
+            tr.appendChild(td);
+            tr.addEventListener("click", this.toggleRow.bind(this, tr));
+            tbody.appendChild(tr);
+          }
+          table.classList.remove("d-none");
+        },
+
+        toggleRow: function (tr, event) {
+          if (event && event.target.closest(".attrs-cell")) {
+            // Don't toggle when clicking inside an already-expanded
+            // attribute table.
+            return;
+          }
+          var next = tr.nextElementSibling;
+          if (next && next.classList.contains("attrs-row")) {
+            tr.classList.remove("is-open");
+            next.remove();
+            return;
+          }
+          tr.classList.add("is-open");
+          var base = document.getElementById("ls-base").value;
+          var dn = tr.getAttribute("data-dn");
+          var url = this.baseUrl() + "/@@plone_ldapsearch_attrs"
+                  + "?base=" + encodeURIComponent(base)
+                  + "&dn=" + encodeURIComponent(dn);
+
+          var attrTr = document.createElement("tr");
+          attrTr.className = "attrs-row";
+          var attrTd = document.createElement("td");
+          attrTd.className = "attrs-cell";
+          attrTd.textContent = "Loading…";
+          attrTr.appendChild(attrTd);
+          tr.parentNode.insertBefore(attrTr, tr.nextSibling);
+
+          fetch(url, { credentials: "same-origin" })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              while (attrTd.firstChild) {
+                attrTd.removeChild(attrTd.firstChild);
+              }
+              attrTd.appendChild(buildAttrsBlock(data));
+            })
+            .catch(function (err) {
+              attrTd.textContent = "Failed: " + err;
+            });
+        }
+      };
+
+      function buildAttrsBlock(data) {
+        if (!data.ok) {
+          var span = document.createElement("span");
+          span.className = "text-danger";
+          span.textContent = data.error || "Unknown error";
+          return span;
+        }
+        var attrs = data.attrs || {};
+        var keys = Object.keys(attrs).sort();
+        if (keys.length === 0) {
+          var em = document.createElement("em");
+          em.className = "text-muted";
+          em.textContent = "No attributes";
+          return em;
+        }
+        var table = document.createElement("table");
+        table.className = "attrs-table";
+        keys.forEach(function (key) {
+          var tr = document.createElement("tr");
+          var th = document.createElement("th");
+          th.textContent = key;
+          tr.appendChild(th);
+          var td = document.createElement("td");
+          var val = attrs[key];
+          if (Array.isArray(val)) {
+            val.forEach(function (v, i) {
+              if (i > 0) td.appendChild(document.createElement("br"));
+              td.appendChild(document.createTextNode(v));
+            });
+          } else {
+            td.textContent = val;
+          }
+          tr.appendChild(td);
+          table.appendChild(tr);
+        });
+        return table;
+      }
+    })();
+  </script>
+
+</metal:main>
+
+</body>
+</html>
