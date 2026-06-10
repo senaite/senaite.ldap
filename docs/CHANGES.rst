@@ -9,6 +9,7 @@ YAFOWIL-based control panel replaced with a native SENAITE form. The
 installed. Existing ``pasldap`` plugin configuration is untouched.
 See ``docs/2.x-plan.md``.
 
+- #18 Move monkey patches into a package with one submodule per target
 - #17 Remove the LDAP / Active Directory configlet on uninstall
 - #16 Move upgrade steps into a package mirroring senaite.patient layout
 - #15 Refactor cache views and control-panel JS for readability
