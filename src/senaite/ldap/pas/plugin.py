@@ -15,7 +15,7 @@ Differences from upstream `pas.plugins.ldap.plugin`:
 - `manage_options` and the ZMI add-form `PageTemplateFile` are
   dropped; senaite.ldap ships its own native control panel at
   `@@senaite_ldapcontrolpanel`.
-- `ILDAPPlugin` is the local marker (`senaite.ldap.plugin_interfaces`)
+- `ILDAPPlugin` is the local marker (`senaite.ldap.pas.interfaces`)
   so the global adapter registry can route lookups for instances of
   this class to our adapters without colliding with upstream's.
 """
@@ -41,10 +41,10 @@ from Products.PluggableAuthService.interfaces import plugins \
 from Products.PluggableAuthService.permissions import ManageGroups
 from Products.PluggableAuthService.permissions import ManageUsers
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
-from senaite.ldap.plugin_cache import get_plugin_cache
-from senaite.ldap.plugin_interfaces import ILDAPPlugin
-from senaite.ldap.plugin_interfaces import VALUE_NOT_CACHED
-from senaite.ldap.plugin_sheet import LDAPUserPropertySheet
+from senaite.ldap.pas.cache import get_plugin_cache
+from senaite.ldap.pas.interfaces import ILDAPPlugin
+from senaite.ldap.pas.interfaces import VALUE_NOT_CACHED
+from senaite.ldap.pas.sheet import LDAPUserPropertySheet
 from six.moves import map
 from zope.interface import implementer
 

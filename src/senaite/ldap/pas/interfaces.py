@@ -14,7 +14,7 @@ implementations onto the same `(provides, requires)` lookup key.
 Existing installs that still pickle as
 ``pas.plugins.ldap.plugin.LDAPPlugin`` continue to use upstream's
 adapters; new installs on our class use the adapters in
-``senaite.ldap.plugin_properties``.
+``senaite.ldap.pas.properties``.
 """
 
 from zope.interface import Interface
@@ -35,7 +35,7 @@ class ICacheSettingsRecordProvider(Interface):
 class IPluginCacheHandler(Interface):
     """Caches the node trees the PAS plugin walks.
 
-    See `senaite.ldap.plugin_cache` for implementations.
+    See `senaite.ldap.pas.cache` for implementations.
     """
 
     def get():

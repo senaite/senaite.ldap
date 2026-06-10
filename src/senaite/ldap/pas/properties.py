@@ -23,9 +23,9 @@ from node.ext.ldap.interfaces import ILDAPProps
 from node.ext.ldap.interfaces import ILDAPUsersConfig
 from node.ext.ldap.properties import BINARY_DEFAULTS
 from node.ext.ldap.properties import MULTIVALUED_DEFAULTS
-from senaite.ldap.plugin_defaults import DEFAULTS
-from senaite.ldap.plugin_interfaces import ICacheSettingsRecordProvider
-from senaite.ldap.plugin_interfaces import ILDAPPlugin
+from senaite.ldap.pas.defaults import DEFAULTS
+from senaite.ldap.pas.interfaces import ICacheSettingsRecordProvider
+from senaite.ldap.pas.interfaces import ILDAPPlugin
 from zope.component import adapter
 from zope.component import queryUtility
 from zope.interface import implementer
