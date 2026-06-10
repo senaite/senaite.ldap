@@ -38,6 +38,17 @@ def upgrade_1100_to_2000(setup_tool):
     drop_yafowil_registry_records(portal)
 
 
+def upgrade_2000_to_2010(setup_tool):
+    """Rename the controlpanel views: ``plone_ldap*`` → ``senaite_ldap*``.
+
+    The 2.0 profile registered the configlet at
+    ``@@plone_ldapcontrolpanel``. The views were renamed to drop the
+    ``plone_`` prefix; re-import the controlpanel profile so existing
+    Site Setup configlets point at the new URL.
+    """
+    import_controlpanel(setup_tool)
+
+
 def import_controlpanel(setup_tool):
     """Re-import the ``controlpanel`` GenericSetup step from the
     senaite.ldap default profile so the configlet entry is registered

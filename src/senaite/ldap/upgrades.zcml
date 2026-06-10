@@ -3,6 +3,17 @@
     xmlns:genericsetup="http://namespaces.zope.org/genericsetup">
 
   <genericsetup:upgradeStep
+      title="senaite.ldap 2.0.0: rename @@plone_ldap* views to @@senaite_ldap*"
+      description="The controlpanel views now live under a senaite_
+                   prefix instead of plone_. Re-import the controlpanel
+                   profile so the Site Setup configlet entry points at
+                   the new URL."
+      source="2000"
+      destination="2010"
+      handler=".upgrade.upgrade_2000_to_2010"
+      profile="senaite.ldap:default"/>
+
+  <genericsetup:upgradeStep
       title="senaite.ldap 2.0.0: migrate to native control panel"
       description="Drop the orphan YAFOWIL registry records left by
                    the 1.x install. The PAS plugin (pasldap) and its

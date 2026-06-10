@@ -139,7 +139,7 @@ class LDAPControlPanel(BrowserView):
             else:
                 self._handle_save()
             return self.request.response.redirect(self.context.absolute_url()
-                                                  + "/@@plone_ldapcontrolpanel")
+                                                  + "/@@senaite_ldapcontrolpanel")
         return self.index()
 
     # ------------------------------------------------------------------

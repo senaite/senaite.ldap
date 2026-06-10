@@ -8,7 +8,7 @@
 
     <!-- LDAP Control Panel -->
     <browser:page
-        name="plone_ldapcontrolpanel"
+        name="senaite_ldapcontrolpanel"
         for="Products.CMFPlone.interfaces.IPloneSiteRoot"
         class=".controlpanel.LDAPControlPanel"
         template="templates/controlpanel.pt"
@@ -18,7 +18,7 @@
 
     <!-- LDAP Search / Inspector page -->
     <browser:page
-        name="plone_ldapsearch"
+        name="senaite_ldapsearch"
         for="Products.CMFPlone.interfaces.IPloneSiteRoot"
         class=".search.LDAPSearchView"
         template="templates/search.pt"
@@ -28,7 +28,7 @@
 
     <!-- LDAP Search JSON: results for a base + filter -->
     <browser:page
-        name="plone_ldapsearch_results"
+        name="senaite_ldapsearch_results"
         for="Products.CMFPlone.interfaces.IPloneSiteRoot"
         class=".search.LDAPSearchResultsView"
         permission="cmf.ManagePortal"
@@ -37,9 +37,27 @@
 
     <!-- LDAP Search JSON: full attribute dump for a single DN -->
     <browser:page
-        name="plone_ldapsearch_attrs"
+        name="senaite_ldapsearch_attrs"
         for="Products.CMFPlone.interfaces.IPloneSiteRoot"
         class=".search.LDAPNodeAttrsView"
+        permission="cmf.ManagePortal"
+        layer="senaite.ldap.interfaces.ISenaiteLdap"
+        />
+
+    <!-- Discovery JSON: object classes available under a base DN -->
+    <browser:page
+        name="senaite_ldapdiscover_objectclasses"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+        class=".discovery.LDAPDiscoverObjectClassesView"
+        permission="cmf.ManagePortal"
+        layer="senaite.ldap.interfaces.ISenaiteLdap"
+        />
+
+    <!-- Discovery JSON: groups under the Groups base DN -->
+    <browser:page
+        name="senaite_ldapdiscover_groups"
+        for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+        class=".discovery.LDAPDiscoverGroupsView"
         permission="cmf.ManagePortal"
         layer="senaite.ldap.interfaces.ISenaiteLdap"
         />

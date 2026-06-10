@@ -24,13 +24,22 @@ def _is_valid_entry(entry):
     ``IndexError`` if the underlying LDAP library returns malformed
     or empty entries — observed against LLDAP for searches that
     bounce through Traefik. Be defensive: skip entries that are not
-    a non-empty sequence with a non-None first element.
+    a non-empty two-element sequence with a non-None first element.
+
+    The 2-element check exists because upstream ``_node.search``
+    line 530 (``for dn, attrs in matches:``) unpacks every entry as
+    ``(dn, attrs)``. Some servers (LLDAP among them) include search
+    continuations / referral chasing entries in the result that have
+    more than two elements; letting those through here surfaces as
+    ``ValueError: too many values to unpack`` deeper in the stack.
     """
     if not entry:
         return False
     if isinstance(entry, (bytes, str)):
         return False
     try:
+        if len(entry) != 2:
+            return False
         return entry[0] is not None
     except (IndexError, TypeError):
         return False

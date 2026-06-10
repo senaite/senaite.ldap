@@ -9,13 +9,13 @@
 
 Provides a small UI plus two JSON endpoints for browsing the
 configured LDAP directory from the control panel. Replaces the
-`@@plone_ldapinspector` view from the dropped
+`@@senaite_ldapinspector` view from the dropped
 `pas.plugins.ldap.plonecontrolpanel` subtree.
 
-- ``@@plone_ldapsearch`` — main page (HTML form + results table).
-- ``@@plone_ldapsearch_results`` — JSON: search results for a
+- ``@@senaite_ldapsearch`` — main page (HTML form + results table).
+- ``@@senaite_ldapsearch_results`` — JSON: search results for a
   base + filter.
-- ``@@plone_ldapsearch_attrs`` — JSON: full attribute dump for a
+- ``@@senaite_ldapsearch_attrs`` — JSON: full attribute dump for a
   single DN.
 """
 
@@ -95,7 +95,7 @@ class LDAPSearchView(_LDAPSearchBase):
     """HTML page that renders the search form + results container.
 
     The container is empty on first render; the front-end JS calls
-    `@@plone_ldapsearch_results` and `@@plone_ldapsearch_attrs`
+    `@@senaite_ldapsearch_results` and `@@senaite_ldapsearch_attrs`
     incrementally.
     """
 
@@ -142,9 +142,9 @@ class LDAPSearchResultsView(_LDAPSearchBase):
 
         try:
             node = LDAPNode(base_dn, self.props)
+            node.search_scope = scope
             dns = node.search(
                 queryFilter=query_filter,
-                scope=scope,
             )
         except Exception as exc:
             logger.warn(
