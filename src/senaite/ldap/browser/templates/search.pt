@@ -167,10 +167,12 @@
 
         setStatus: function (msg, level) {
           var status = document.getElementById("ls-status");
-          if (!msg) { status.innerHTML = ""; return; }
-          status.innerHTML =
-            '<div class="alert alert-' + (level || "info") + ' py-2 mb-0">' +
-            msg + '</div>';
+          while (status.firstChild) status.removeChild(status.firstChild);
+          if (!msg) return;
+          var div = document.createElement("div");
+          div.className = "alert alert-" + (level || "info") + " py-2 mb-0";
+          div.textContent = msg;
+          status.appendChild(div);
         },
 
         run: function () {
@@ -225,8 +227,10 @@
             var tr = document.createElement("tr");
             tr.className = "result-row";
             tr.setAttribute("data-dn", dn);
-            tr.innerHTML = '<td class="text-monospace">' +
-                           escapeHtml(dn) + '</td>';
+            var td = document.createElement("td");
+            td.className = "text-monospace";
+            td.textContent = dn;
+            tr.appendChild(td);
             tr.addEventListener("click", this.toggleRow.bind(this, tr));
             tbody.appendChild(tr);
           }
@@ -254,51 +258,62 @@
 
           var attrTr = document.createElement("tr");
           attrTr.className = "attrs-row";
-          attrTr.innerHTML = '<td class="attrs-cell">Loading…</td>';
+          var attrTd = document.createElement("td");
+          attrTd.className = "attrs-cell";
+          attrTd.textContent = "Loading…";
+          attrTr.appendChild(attrTd);
           tr.parentNode.insertBefore(attrTr, tr.nextSibling);
 
           fetch(url, { credentials: "same-origin" })
             .then(function (r) { return r.json(); })
             .then(function (data) {
-              attrTr.querySelector("td").innerHTML = renderAttrs(data);
+              while (attrTd.firstChild) {
+                attrTd.removeChild(attrTd.firstChild);
+              }
+              attrTd.appendChild(buildAttrsBlock(data));
             })
             .catch(function (err) {
-              attrTr.querySelector("td").textContent =
-                "Failed: " + err;
+              attrTd.textContent = "Failed: " + err;
             });
         }
       };
 
-      function escapeHtml(s) {
-        return String(s)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;");
-      }
-
-      function renderAttrs(data) {
+      function buildAttrsBlock(data) {
         if (!data.ok) {
-          return '<span class="text-danger">' +
-                 escapeHtml(data.error || "Unknown error") +
-                 '</span>';
+          var span = document.createElement("span");
+          span.className = "text-danger";
+          span.textContent = data.error || "Unknown error";
+          return span;
         }
         var attrs = data.attrs || {};
         var keys = Object.keys(attrs).sort();
         if (keys.length === 0) {
-          return '<em class="text-muted">No attributes</em>';
+          var em = document.createElement("em");
+          em.className = "text-muted";
+          em.textContent = "No attributes";
+          return em;
         }
-        var rows = keys.map(function (key) {
+        var table = document.createElement("table");
+        table.className = "attrs-table";
+        keys.forEach(function (key) {
+          var tr = document.createElement("tr");
+          var th = document.createElement("th");
+          th.textContent = key;
+          tr.appendChild(th);
+          var td = document.createElement("td");
           var val = attrs[key];
           if (Array.isArray(val)) {
-            val = val.map(escapeHtml).join("<br/>");
+            val.forEach(function (v, i) {
+              if (i > 0) td.appendChild(document.createElement("br"));
+              td.appendChild(document.createTextNode(v));
+            });
           } else {
-            val = escapeHtml(val);
+            td.textContent = val;
           }
-          return '<tr><th>' + escapeHtml(key) +
-                 '</th><td>' + val + '</td></tr>';
-        }).join("");
-        return '<table class="attrs-table">' + rows + '</table>';
+          tr.appendChild(td);
+          table.appendChild(tr);
+        });
+        return table;
       }
     })();
   </script>
