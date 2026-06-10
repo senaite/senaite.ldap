@@ -735,16 +735,19 @@
       ".senaite-ldap-form .nav-tabs a.nav-link[href='" + href + "']");
     if (!link) return;
 
-    // Prefer Bootstrap's own tab plugin when jQuery is present:
-    // it keeps internal state (aria-selected, focus, shown.bs.tab)
-    // in sync. Manual class toggling alone leaves the nav-link
-    // visually inactive even though the pane shows.
-    var $ = window.jQuery;
-    if ($ && typeof $(link).tab === "function") {
-      $(link).tab("show");
+    // Trigger Bootstrap's tab plugin via a synthetic click. Bootstrap
+    // 4 binds a delegated handler to ``[data-toggle="tab"]`` on the
+    // document, so a click fires its whole state machine (active
+    // classes on the nav-link, aria-selected, pane fade) the same
+    // way a user click does. Calling ``$(link).tab("show")`` directly
+    // works in isolation but raced with Bootstrap's own initialisation
+    // here, leaving the link visually inactive.
+    if (typeof link.click === "function") {
+      link.click();
       return;
     }
 
+    // Pure-DOM fallback for environments without Bootstrap / jQuery.
     var pane = document.querySelector(".senaite-ldap-form " + href);
     if (!pane) return;
     deactivateAllTabs();
@@ -765,6 +768,18 @@
     });
   });
 
-  var urlTab = new URL(window.location.href).searchParams.get("tab");
-  if (urlTab && TAB_ID_RE.test(urlTab)) activateTab("#" + urlTab);
+  // Defer the initial activation so Bootstrap's delegated click
+  // handler has been wired by the time we synthesise the click.
+  function applyStickyTab() {
+    var urlTab = new URL(window.location.href).searchParams.get("tab");
+    if (urlTab && TAB_ID_RE.test(urlTab)) activateTab("#" + urlTab);
+  }
+
+  if (window.jQuery) {
+    window.jQuery(applyStickyTab);
+  } else if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", applyStickyTab);
+  } else {
+    applyStickyTab();
+  }
 })();
