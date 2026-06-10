@@ -9,6 +9,7 @@ YAFOWIL-based control panel replaced with a native SENAITE form. The
 installed. Existing ``pasldap`` plugin configuration is untouched.
 See ``docs/2.x-plan.md``.
 
+- #15 Refactor cache views and control-panel JS for readability
 - #14 Remember active control-panel tab across reloads via ?tab= URL parameter
 - #13 Cache tab: live memcached stats (hits/misses/items/bytes) + Purge button
 - #12 Consolidate all 2.0.0 upgrade steps into a single 1100 → 2000 step
