@@ -87,9 +87,13 @@
         </small>
       </div>
       <div class="d-flex align-items-center">
-        <a class="btn btn-sm btn-outline-secondary mr-2"
-           tal:attributes="href string:${context/absolute_url}/@@plone_ldapsearch;
-                           class python:'btn btn-sm btn-outline-secondary mr-2' + (connected and '' or ' disabled')"
+        <a tal:condition="connected"
+           class="btn btn-sm btn-outline-secondary mr-2"
+           tal:attributes="href string:${context/absolute_url}/@@plone_ldapsearch"
+           i18n:translate="">Search &amp; inspect</a>
+        <a tal:condition="not:connected"
+           class="btn btn-sm btn-outline-secondary mr-2 disabled"
+           href="#"
            i18n:translate="">Search &amp; inspect</a>
         <form method="post" class="mb-0"
               tal:attributes="action string:${context/absolute_url}/@@plone_ldapcontrolpanel">

@@ -3,7 +3,8 @@
 
 The patches here guard against defects that surface as hard errors in
 unrelated SENAITE code paths (e.g. Client creation triggers a PAS group
-lookup which iterates LDAP groups).
+lookup which iterates LDAP groups; a user authenticating triggers a
+search to resolve the login attribute to a user id).
 """
 
 from node.ext.ldap import session as _ldap_session
@@ -14,30 +15,85 @@ from senaite.ldap import logger
 _ORIGINAL_LDAP_SESSION_SEARCH = _ldap_session.LDAPSession.search
 
 
-def safe_ldap_session_search(self, *args, **kwargs):
-    """Wrap LDAPSession.search to tolerate empty paged responses.
+def _is_valid_entry(entry):
+    """Return True if ``entry`` looks like a ``(dn, attrs)`` tuple
+    with a non-None DN.
 
-    node.ext.ldap 1.2 unconditionally unpacks the communicator response
-    into ``(results, cookie)`` when a page size is set
-    (``session.py`` line 55). If the LDAP server returns no results or
-    omits the paged-results control cookie, the unpacking raises
-    ``ValueError: need more than 0 values to unpack`` and breaks any
-    caller that enumerates groups via PAS, including Client creation.
-
-    Treat that as an empty result instead of propagating the error.
+    Upstream node.ext.ldap 1.2 (``session.py`` line 57) blindly does
+    ``x[0] is not None`` over every result entry, which raises
+    ``IndexError`` if the underlying LDAP library returns malformed
+    or empty entries — observed against LLDAP for searches that
+    bounce through Traefik. Be defensive: skip entries that are not
+    a non-empty sequence with a non-None first element.
     """
+    if not entry:
+        return False
+    if isinstance(entry, (bytes, str)):
+        return False
     try:
-        return _ORIGINAL_LDAP_SESSION_SEARCH(self, *args, **kwargs)
-    except ValueError as exc:
+        return entry[0] is not None
+    except (IndexError, TypeError):
+        return False
+
+
+def safe_ldap_session_search(self, queryFilter='(objectClass=*)',
+                             scope=_ldap_session.BASE, baseDN=None,
+                             force_reload=False, attrlist=None,
+                             attrsonly=0, page_size=None, cookie=None):
+    """Drop-in replacement for ``LDAPSession.search``.
+
+    Differences from upstream:
+
+    1. The paged-results response is unpacked defensively. When
+       ``page_size`` is set, upstream does ``res, cookie = res`` and
+       blows up if the LDAP server omits the paged-results control
+       cookie (``ValueError: need more than 0 values to unpack``).
+       Here we tolerate either shape and synthesize an empty cookie
+       if needed.
+    2. The "skip ActiveDirectory phantom entries" filter
+       (``x[0] is not None``) is replaced with ``_is_valid_entry``
+       which also tolerates empty / non-sequence entries.
+
+    Both bugs surface as cryptic crashes deep inside the PAS
+    authentication chain. The patches are conservative: on the happy
+    path the behaviour is identical to upstream.
+    """
+    if not queryFilter:
+        queryFilter = '(objectClass=*)'
+
+    raw = self._communicator.search(
+        queryFilter,
+        scope,
+        baseDN,
+        force_reload,
+        attrlist,
+        attrsonly,
+        page_size,
+        cookie,
+    )
+
+    if page_size:
+        try:
+            res, cookie = raw
+        except (ValueError, TypeError) as exc:
+            logger.warning(
+                "LDAP paged-results response had no cookie (%s); "
+                "treating as empty page.", exc)
+            res, cookie = [], None
+    else:
+        res = raw
+
+    try:
+        res = [x for x in res if _is_valid_entry(x)]
+    except Exception as exc:
         logger.warning(
-            "LDAP search failed to unpack paged response (%s); "
-            "treating as empty result. Check your LDAP server's "
-            "paged-results support and the configured page size.",
-            exc,
-        )
-        if kwargs.get("page_size"):
-            return [], None
-        return []
+            "LDAP result filtering failed (%s); returning empty.",
+            exc)
+        res = []
+
+    if page_size:
+        return res, cookie
+    return res
 
 
 def apply_patches():
