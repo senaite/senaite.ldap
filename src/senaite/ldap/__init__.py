@@ -2,24 +2,31 @@
 
 import logging
 
+PRODUCT_NAME = "senaite.ldap"
+PROFILE_ID = "profile-{}:default".format(PRODUCT_NAME)
+UNINSTALL_PROFILE_ID = "profile-{}:uninstall".format(PRODUCT_NAME)
+
+# `logger` must be defined before any further import on this module
+# because `_bbb.apply()` below pre-imports `senaite.ldap.pas.*` to
+# build sys.modules aliases, and those submodules do
+# `from senaite.ldap import logger` at their own top level.
+# `senaite.ldap` is still partway through executing here, so its
+# attributes must exist before the chain reaches them.
+logger = logging.getLogger(PRODUCT_NAME)
+
 # Apply BBB sys.modules aliases BEFORE any other import. The
 # persistent component registry on existing installs references
-# `pas.plugins.ldap.*` dotted paths; the shim makes those resolve
-# to our vendored symbols. Must run before Zope unpickles the local
-# site manager.
-from senaite.ldap import _bbb as _bbb_shim
+# `pas.plugins.ldap.*` and `yafowil.plone.interfaces` dotted paths;
+# the shim makes those resolve to our vendored symbols. Must run
+# before Zope unpickles the local site manager.
+from senaite.ldap import _bbb as _bbb_shim  # noqa: E402
 _bbb_shim.apply()
 
 from bika.lims.api import get_request  # noqa: E402
 from senaite.ldap.interfaces import ISenaiteLdap  # noqa: E402
 from zope.i18nmessageid import MessageFactory  # noqa: E402
 
-PRODUCT_NAME = "senaite.ldap"
-PROFILE_ID = "profile-{}:default".format(PRODUCT_NAME)
-UNINSTALL_PROFILE_ID = "profile-{}:uninstall".format(PRODUCT_NAME)
-
 messageFactory = MessageFactory(PRODUCT_NAME)
-logger = logging.getLogger(PRODUCT_NAME)
 
 
 def is_installed():
