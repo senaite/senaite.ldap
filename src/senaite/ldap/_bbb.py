@@ -46,6 +46,20 @@ the shim is in place before any persistent registry unpickling.
 import sys
 import types
 
+from zope.interface import Interface
+
+
+class IYafowilLayer(Interface):
+    """Inert BBB stand-in for `yafowil.plone.interfaces.IYafowilLayer`.
+
+    Module-level so the persistent component registry can pickle
+    references to it via the stable dotted path
+    ``senaite.ldap._bbb.IYafowilLayer``. A nested-in-function version
+    works at lookup time but fails as soon as anything tries to
+    persist a registration that points at it (e.g.
+    ``portal_quickinstaller/reinstallProducts``).
+    """
+
 
 _LEGACY_PACKAGES = (
     "pas",
@@ -142,15 +156,10 @@ def _alias_yafowil_plone_interfaces_module():
     1.x sites have a `yafowil.plone.interfaces.IYafowilLayer`
     browser-layer registration in the persistent registry. We don't
     use YAFOWIL anywhere, but the registration still gets resolved
-    on every page render. Expose a dummy `Interface` subclass so
-    resolution succeeds; the layer is otherwise inert (no view is
-    registered against it).
+    on every page render. Expose a module-level `IYafowilLayer`
+    stand-in so resolution succeeds and the registration can be
+    re-pickled if any setup handler touches it.
     """
-    from zope.interface import Interface
-
-    class IYafowilLayer(Interface):
-        """Inert BBB stand-in for `yafowil.plone.interfaces`."""
-
     mod = types.ModuleType("yafowil.plone.interfaces")
     mod.IYafowilLayer = IYafowilLayer
     sys.modules["yafowil.plone.interfaces"] = mod
