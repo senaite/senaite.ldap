@@ -1,2 +1,261 @@
 msgid ""
 msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2026-07-06 19:31+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI +ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"Language-Code: en\n"
+"Language-Name: English\n"
+"Preferred-Encodings: utf-8 latin1\n"
+"Domain: DOMAIN\n"
+
+#: senaite/ldap/browser/templates/controlpanel.pt:189
+msgid "Absolute path to a CA bundle that should validate the server certificate. Leave empty to use the system trust store."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:423
+msgid "Account expiration"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:202
+msgid "Anonymous bind"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:458
+msgid "Attribute map"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:270
+msgid "Base DN"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:131
+msgid "Cache"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:639
+msgid "Cache LDAP queries"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:676
+msgid "Cache status"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:661
+msgid "Cache timeout (s)"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:596
+msgid "Computed from the object classes and query filter above."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:355
+msgid "Computed from the object classes and query filter above. Updates as you change them."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:232
+msgid "Connection (s)"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:147
+msgid "Connection URI"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:278
+msgid "Detect"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:591
+msgid "Effective groups filter (preview)"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:350
+msgid "Effective user filter (preview)"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:438
+msgid "Expires attribute"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:491
+msgid "Expose LDAP groups in SENAITE"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:652
+msgid "Global across all LDAP plugins. Leave empty to use the local in-memory cache."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:416
+msgid "Group DNs outside the configured Groups Base DN are ignored except for those listed here. Pick from the discovered groups, or <a href=\"#\" class=\"reveal-textarea\" data-target=\"f-users-extgroups\">x</a>."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:362
+msgid "Group membership"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:127
+msgid "Groups"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:216
+msgid "Ignore TLS / SSL certificate errors"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:104
+#: senaite/ldap/browser/templates/search.pt:45
+#: senaite/ldap/profiles/default/controlpanel.xml
+msgid "LDAP / Active Directory"
+msgstr ""
+
+#: senaite/ldap/browser/templates/search.pt:49
+msgid "LDAP Search &amp; Inspector"
+msgstr ""
+
+#: senaite/ldap/browser/controlpanel.py:417
+msgid "LDAP connection: ${state} (${message})"
+msgstr ""
+
+#: senaite/ldap/browser/controlpanel.py:391
+msgid "LDAP settings saved."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:175
+msgid "Leave blank to keep the currently stored password."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:219
+msgid "Linux only. macOS dev: set <code>LDAPTLS_REQCERT=never</code> in the instance environment instead."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:161
+msgid "Manager DN"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:170
+msgid "Manager password"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:645
+msgid "Memcached server"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:314
+msgid "Object classes"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:469
+msgid "One <code>key=value</code> mapping per line. Reserved keys: <code>id</code>, <code>login</code>, <code>rdn</code> (plus <code>groups</code> when memberOf is enabled). Property-sheet mappings live in the same list."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:620
+msgid "One <code>key=value</code> mapping per line. Reserved keys: <code>id</code>, <code>rdn</code>."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:240
+msgid "Operation (s)"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:248
+msgid "Page size"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:583
+msgid "Pick from the list (one of <code>groupOfNames</code>, <code>groupOfUniqueNames</code>, <code>posixGroup</code>, <code>group</code> is required), or <a href=\"#\" class=\"reveal-textarea\" data-target=\"f-groups-oc\">x</a>."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:342
+msgid "Pick from the list, or click ${link} to hand-edit (one class per line). <a href=\"#\" class=\"reveal-textarea\" data-target=\"f-users-oc\">x</a>"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:682
+msgid "Purge cache"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:291
+msgid "Query filter"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:380
+msgid "Recursive / nested groups"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:678
+msgid "Refresh"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:324
+msgid "Refresh from server"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:135
+msgid "Search"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:301
+msgid "Search scope"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:119
+msgid "Server"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:256
+msgid "Set page size to 1 if the server does not support paged results."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:100
+msgid "Site Setup"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:182
+msgid "TLS CA certificate file"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:227
+msgid "Timeouts &amp; paging"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:446
+msgid "Unit"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:153
+msgid "Use <code>ldaps://</code> for TLS, <code>ldap://</code> for plain."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:431
+msgid "User accounts can expire"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:123
+msgid "Users"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:383
+msgid "Uses <code>LDAP_MATCHING_RULE_IN_CHAIN</code>. AD only."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:205
+msgid "When enabled, Manager DN and password are ignored."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:494
+msgid "When unchecked, LDAP groups stop appearing in the user group preferences and other group listings. LDAP users and the configuration below are untouched -- only the four group-related PAS plugin interfaces (<code>IGroupsPlugin</code>, <code>IGroupEnumerationPlugin</code>, <code>IGroupIntrospection</code>, <code>IGroupManagement</code>) are deactivated."
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:342
+msgid "edit raw"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:370
+msgid "memberOf attribute supported"
+msgstr ""
+
+#: senaite/ldap/browser/templates/controlpanel.pt:390
+msgid "memberOf external group DNs"
+msgstr ""

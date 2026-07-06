@@ -3,8 +3,8 @@
    :alt: senaite.ldap
    :height: 128
 
-*Publication of HTML/PDF Reports in SENAITE*
-============================================
+*LDAP / Active Directory authentication for SENAITE LIMS*
+=========================================================
 
 .. image:: https://img.shields.io/pypi/v/senaite.ldap.svg?style=flat-square
    :target: https://pypi.python.org/pypi/senaite.ldap
