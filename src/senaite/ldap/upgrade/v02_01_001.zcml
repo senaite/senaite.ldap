@@ -1,0 +1,21 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup">
+
+  <genericsetup:upgradeStep
+      title="senaite.ldap 2.1.1: re-register LDAP control panel action"
+      description="Rewrite the persistent portal_controlpanel action for
+                   'LDAP / Active Directory' under action id and appId
+                   'senaite.ldap', with permission 'Manage portal', so
+                   the entry actually shows up in Site Setup. Fixes
+                   2.0.0 / 2.1.0 installs where the previous handler
+                   short-circuited on a broken isOlderVersion check
+                   (dotted 2.1.0 vs 4-digit 2000) and left the 1.x
+                   LDAP_Configuration action with empty permission in
+                   place -- invisible in the overview."
+      source="2100"
+      destination="2101"
+      handler=".v02_01_001.upgrade"
+      profile="senaite.ldap:default"/>
+
+</configure>

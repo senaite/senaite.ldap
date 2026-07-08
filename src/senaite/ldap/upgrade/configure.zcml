@@ -3,6 +3,9 @@
     xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
     i18n_domain="senaite.ldap">
 
+  <!-- 2.1.1 -->
+  <include file="v02_01_001.zcml" />
+
   <!-- 2.1.0 -->
   <include file="v02_01_000.zcml" />
 

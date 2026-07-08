@@ -1,10 +1,10 @@
 Changelog
 =========
 
-2.2.0 (unreleased)
+2.1.1 (unreleased)
 ------------------
 
-- ...
+- #30 Re-register LDAP control panel action so it actually shows in Site Setup
 
 2.1.0 (2026-07-08)
 ------------------
