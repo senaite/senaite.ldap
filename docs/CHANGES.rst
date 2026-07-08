@@ -4,8 +4,7 @@ Changelog
 2.1.1 (unreleased)
 ------------------
 
-- Fix broken isOlderVersion guard in the 2.0.0 upgrade step handler
-- Re-register LDAP control panel action under senaite.ldap id/appId with Manage portal permission
+- #30 Re-register LDAP control panel action so it actually shows in Site Setup
 
 2.1.0 (2026-07-08)
 ------------------
