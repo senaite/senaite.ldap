@@ -4,7 +4,7 @@ Changelog
 2.2.0 (unreleased)
 ------------------
 
-- Trim install_requires to what we actually import and refresh README
+- Refresh README (rst + md) to drop the pas.plugins.ldap integration claim and list actual features
 
 2.1.1 (2026-07-08)
 ------------------
