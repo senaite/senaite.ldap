@@ -4,7 +4,7 @@ Changelog
 2.1.0 (unreleased)
 ------------------
 
-- ...
+- #29 Rewrite LDAP control panel action directly, don't rely on GS re-import
 
 2.0.0 (2026-07-06)
 ------------------

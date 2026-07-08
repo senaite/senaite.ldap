@@ -1,0 +1,17 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup">
+
+  <genericsetup:upgradeStep
+      title="senaite.ldap 2.1.0: rewrite LDAP control panel action"
+      description="Rewrite the persistent portal_controlpanel action for
+                   'LDAP / Active Directory' to the native SENAITE URL
+                   (@@senaite_ldapcontrolpanel). Fixes 2.0.0 installs
+                   where the 1100 -> 2000 step failed to overwrite the
+                   1.x plone_ldapcontrolpanel URL."
+      source="2000"
+      destination="2100"
+      handler=".v02_01_000.upgrade"
+      profile="senaite.ldap:default"/>
+
+</configure>
