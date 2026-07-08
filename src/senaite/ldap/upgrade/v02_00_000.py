@@ -13,7 +13,6 @@ from node.ext.ldap.scope import BASE
 from node.ext.ldap.scope import SUBTREE
 from Products.CMFCore.utils import getToolByName
 from senaite.core.upgrade import upgradestep
-from senaite.core.upgrade.utils import UpgradeUtils
 from senaite.ldap import logger
 from senaite.ldap import PRODUCT_NAME
 from senaite.ldap.setuphandlers import deactivate_user_adder
@@ -86,16 +85,9 @@ def upgrade(tool):
     :param tool: The portal_setup tool.
     """
     portal = tool.aq_inner.aq_parent
-    ut = UpgradeUtils(portal)
-    ver_from = ut.getInstalledVersion(PRODUCT_NAME)
 
-    if ut.isOlderVersion(PRODUCT_NAME, version):
-        logger.info("Skipping upgrade of {0}: {1} > {2}".format(
-            PRODUCT_NAME, ver_from, version))
-        return True
-
-    logger.info("Upgrading {0}: {1} -> {2}".format(
-        PRODUCT_NAME, ver_from, version))
+    logger.info(
+        "Upgrading {0} to version {1}".format(PRODUCT_NAME, version))
 
     register_controlpanel(portal)
     drop_yafowil_registry_records(portal)
@@ -103,8 +95,8 @@ def upgrade(tool):
     install_pas_plugin(portal)
     deactivate_user_adder(portal)
 
-    logger.info("{0} upgraded to version {1}".format(
-        PRODUCT_NAME, version))
+    logger.info(
+        "{0} upgraded to version {1}".format(PRODUCT_NAME, version))
     return True
 
 

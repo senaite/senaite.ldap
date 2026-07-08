@@ -8,7 +8,6 @@
 """Upgrade step 2.0.0 -> 2.1.0 for senaite.ldap."""
 
 from senaite.core.upgrade import upgradestep
-from senaite.core.upgrade.utils import UpgradeUtils
 from senaite.ldap import logger
 from senaite.ldap import PRODUCT_NAME
 from senaite.ldap.setuphandlers import register_controlpanel
@@ -28,24 +27,21 @@ def upgrade(tool):
     no-ops when the site's profile version already matches ours.
     Rewrite the action directly.
 
-    Idempotent.
+    Idempotent. No inner ``isOlderVersion`` guard: comparing a
+    dotted setup.py version ("2.1.0") against a 4-digit metadata
+    version ("2000") via ``pkg_resources.parse_version`` gives
+    "2.1.0 < 2000" (release tuple (2, 1, 0) < (2000,)), which
+    would incorrectly short-circuit the handler. ``portal_setup``
+    already gates the step through the ZCML ``source`` /
+    ``destination`` values, so the inner check is also redundant.
 
     :param tool: The portal_setup tool.
     """
     portal = tool.aq_inner.aq_parent
-    ut = UpgradeUtils(portal)
-    ver_from = ut.getInstalledVersion(PRODUCT_NAME)
 
-    if ut.isOlderVersion(PRODUCT_NAME, version):
-        logger.info("Skipping upgrade of {0}: {1} > {2}".format(
-            PRODUCT_NAME, ver_from, version))
-        return True
-
-    logger.info("Upgrading {0}: {1} -> {2}".format(
-        PRODUCT_NAME, ver_from, version))
-
+    logger.info(
+        "Upgrading {0} to version {1}".format(PRODUCT_NAME, version))
     register_controlpanel(portal)
-
-    logger.info("{0} upgraded to version {1}".format(
-        PRODUCT_NAME, version))
+    logger.info(
+        "{0} upgraded to version {1}".format(PRODUCT_NAME, version))
     return True

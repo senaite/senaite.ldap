@@ -25,11 +25,20 @@ PLUGIN_ID = "pasldap"
 # overwrite the persistent action -- something that silently doesn't
 # happen when an existing install already registers the profile at
 # our current metadata version.
-CONFIGLET_ACTION_ID = "LDAP_Configuration"
+#
+# CONFIGLET_ACTION_ID is the id we register under. LEGACY_ACTION_ID is
+# the id the 1.x ``pas.plugins.ldap.plonecontrolpanel`` profile used;
+# we unregister that one alongside our own so upgraded installs don't
+# end up with two entries.
+CONFIGLET_ACTION_ID = "senaite.ldap"
+LEGACY_ACTION_ID = "LDAP_Configuration"
 CONFIGLET_TITLE = u"LDAP / Active Directory"
 CONFIGLET_APP_ID = "senaite.ldap"
 CONFIGLET_CATEGORY = "plone-users"
 CONFIGLET_URL = "string:${portal_url}/@@senaite_ldapcontrolpanel"
+# Manage portal (lowercase) is the canonical PloneCPBase permission;
+# leaving it empty makes `enumConfiglets` skip the entry entirely
+# because the permission-check loop never flips `verified` to 1.
 CONFIGLET_PERMISSION = "Manage portal"
 
 
@@ -67,6 +76,7 @@ def register_controlpanel(portal):
             "portal_controlpanel not found; skipping configlet rewrite")
         return
 
+    tool.unregisterConfiglet(LEGACY_ACTION_ID)
     tool.unregisterConfiglet(CONFIGLET_ACTION_ID)
     tool.registerConfiglet(
         id=CONFIGLET_ACTION_ID,
