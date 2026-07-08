@@ -42,18 +42,24 @@ setup(
         # `senaite.ldap.pas`; we no longer depend on
         # `pas.plugins.ldap` at runtime. The YAFOWIL pins that
         # workaround its declared deps are gone with it.
+        #
+        # We only pin what we import directly:
+        # - `node.ext.ldap` for the LDAP session, UGM layer, config
+        #   schemas, scopes and property defaults.
+        # - `python-ldap` for `import ldap` error constants used in
+        #   `senaite.ldap.pas.plugin` (technically transitive of
+        #   `node.ext.ldap`, kept explicit for pin stability).
+        # - `bda.cache` for `Memcached` / `NullCache` cache providers.
+        # - `python-memcached` because `browser.cache` reaches into
+        #   the wrapped `memcache.Client` directly for `get_stats`
+        #   (technically transitive of `bda.cache`, kept explicit).
+        #
+        # `passlib`, `pyasn1`, `pyasn1-modules`, `node`, `odict`,
+        # `plumber`, `setuptools` resolve fine as transitives.
         "node.ext.ldap==1.2",
         "python-ldap==3.3.1",
-        "pyasn1==0.4.8",
-        "pyasn1-modules==0.2.8",
-        "node==1.2",
-        "odict==1.9.0",
         "bda.cache==1.3.0",
-        "passlib==1.7.4",
         "python-memcached==1.59",
-        # plumber >= 2.0.0 does not support Python 2.x anymore
-        "plumber<2.0.0",
-        "setuptools",
     ],
     extras_require={
         "test": [

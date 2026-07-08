@@ -30,9 +30,13 @@ About
 
 SENAITE LDAP is a Pluggable Auth Service (PAS) Plugin for SENAITE.
 
-It integrates [pas.plugins.ldap](https://github.com/collective/pas.plugins.ldap)
-with known good versions of its dependencies and integrates it into the SENAITE
-UI.
+It bridges SENAITE users and groups to an LDAP or Active Directory backend
+via `node.ext.ldap`_, and ships a native SENAITE control panel to configure
+the connection, attribute mapping, cache and group exposure.
+
+The PAS plugin was originally derived from `pas.plugins.ldap`_. Since
+2.0.0 the plugin lives in-tree under `senaite.ldap.pas`; `pas.plugins.ldap`
+is no longer a runtime dependency.
 
 
 Dependencies
@@ -62,3 +66,5 @@ GNU General Public License for more details.
 
 .. _SENAITE LIMS: https://www.senaite.com
 .. _GNU General Public License version 2: https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+.. _node.ext.ldap: https://github.com/conestack/node.ext.ldap
+.. _pas.plugins.ldap: https://github.com/collective/pas.plugins.ldap

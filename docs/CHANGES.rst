@@ -4,7 +4,7 @@ Changelog
 2.2.0 (unreleased)
 ------------------
 
-- no changes yet
+- Trim install_requires to what we actually import and refresh README
 
 2.1.1 (2026-07-08)
 ------------------
