@@ -4,7 +4,7 @@ Changelog
 2.2.0 (unreleased)
 ------------------
 
-- Refresh README (rst + md) to drop the pas.plugins.ldap integration claim and list actual features
+- #31 Refresh README to drop the pas.plugins.ldap integration claim
 
 2.1.1 (2026-07-08)
 ------------------
