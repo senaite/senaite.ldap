@@ -28,9 +28,30 @@
 
 SENAITE LDAP is a Pluggable Auth Service (PAS) Plugin for SENAITE.
 
-It integrates [pas.plugins.ldap](https://github.com/collective/pas.plugins.ldap)
-with known good versions of its dependencies and integrates it into the SENAITE
-UI.
+It bridges SENAITE users and groups to an LDAP or Active Directory
+backend via [node.ext.ldap](https://github.com/conestack/node.ext.ldap),
+and ships a native SENAITE control panel to configure the connection,
+attribute mapping, cache and group exposure.
+
+Features:
+
+- Native SENAITE control panel with tabs for server, users, groups,
+  cache and a live inspector.
+- Server tab with base DN detection, connectivity check and live
+  status indicator.
+- Users and groups tabs with LDAP object class discovery, live filter
+  preview and configurable member attribute mapping.
+- Optional group exposure so LDAP groups become first-class SENAITE
+  groups.
+- Optional memcached-backed query cache with live stats and manual
+  purge from the control panel.
+- Inspector page for ad-hoc LDAP searches against the configured
+  backend.
+
+The PAS plugin was originally derived from
+[pas.plugins.ldap](https://github.com/collective/pas.plugins.ldap).
+Since 2.0.0 the plugin lives in-tree under `senaite.ldap.pas`;
+`pas.plugins.ldap` is no longer a runtime dependency.
 
 
 ## License
