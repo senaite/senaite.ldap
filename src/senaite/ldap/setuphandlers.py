@@ -6,11 +6,11 @@ from senaite.ldap import logger
 
 # Registry key prefixes the uninstall handler and the 1.x -> 2.x
 # upgrade step walk to scrub leftovers:
-# - ``pas.plugins.ldap`` was the persistent settings namespace used by
-#   the upstream plugin; we still write to ``pas.plugins.ldap.memcached``
+# - `pas.plugins.ldap` was the persistent settings namespace used by
+#   the upstream plugin; we still write to `pas.plugins.ldap.memcached`
 #   for back-compat with installs that have a value there.
-# - ``yafowil`` / ``plone.bundles/yafowil`` are 1.x noise from the
-#   dropped ``plonecontrolpanel`` profile.
+# - `yafowil` / `plone.bundles/yafowil` are 1.x noise from the
+#   dropped `plonecontrolpanel` profile.
 REGISTRY_KEYS = [
     "pas.plugins.ldap",
     "yafowil",
@@ -27,7 +27,7 @@ PLUGIN_ID = "pasldap"
 # our current metadata version.
 #
 # CONFIGLET_ACTION_ID is the id we register under. LEGACY_ACTION_ID is
-# the id the 1.x ``pas.plugins.ldap.plonecontrolpanel`` profile used;
+# the id the 1.x `pas.plugins.ldap.plonecontrolpanel` profile used;
 # we unregister that one alongside our own so upgraded installs don't
 # end up with two entries.
 CONFIGLET_ACTION_ID = "senaite.ldap"
@@ -58,12 +58,12 @@ def install(context):
 def register_controlpanel(portal):
     """Point the "LDAP / Active Directory" configlet at our own view.
 
-    Rewrites the persistent ``portal_controlpanel`` action so the
-    Site Setup link resolves to ``@@senaite_ldapcontrolpanel``
-    instead of the 1.x ``plone_ldapcontrolpanel`` URL registered by
-    the dropped ``pas.plugins.ldap.plonecontrolpanel`` profile.
+    Rewrites the persistent `portal_controlpanel` action so the
+    Site Setup link resolves to `@@senaite_ldapcontrolpanel`
+    instead of the 1.x `plone_ldapcontrolpanel` URL registered by
+    the dropped `pas.plugins.ldap.plonecontrolpanel` profile.
 
-    Direct write instead of ``runImportStepFromProfile("controlpanel")``
+    Direct write instead of `runImportStepFromProfile("controlpanel")`
     because the GS import silently no-ops when the site's profile
     version already matches ours -- which is the case as soon as
     the 2.x sdist is installed. Idempotent.
@@ -218,9 +218,9 @@ def _migrate_plugin(acl_users, old_plugin, new_class):
 
     Snapshot the persistent state first, then delete and recreate
     so the persisted class path moves from
-    ``pas.plugins.ldap.plugin.LDAPPlugin`` to
-    ``senaite.ldap.plugin.LDAPPlugin``. The new instance keeps the
-    same id (``pasldap``), the same settings BTree contents, the
+    `pas.plugins.ldap.plugin.LDAPPlugin` to
+    `senaite.ldap.plugin.LDAPPlugin`. The new instance keeps the
+    same id (`pasldap`), the same settings BTree contents, the
     same plugin-cache flag, and the same set of activated PAS
     interfaces (so e.g. an admin who deactivated `IUserAdderPlugin`
     via the ZMI keeps that decision after the swap).

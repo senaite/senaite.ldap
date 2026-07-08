@@ -20,20 +20,20 @@ version = "2.1.0"
 def upgrade(tool):
     """Rewrite the LDAP control panel action.
 
-    2.0.0 installs still carry the 1.x ``plone_ldapcontrolpanel``
-    URL on the persistent ``portal_controlpanel`` action, because
+    2.0.0 installs still carry the 1.x `plone_ldapcontrolpanel`
+    URL on the persistent `portal_controlpanel` action, because
     the 1100 -> 2000 step relied on
-    ``runImportStepFromProfile("controlpanel")`` which silently
+    `runImportStepFromProfile("controlpanel")` which silently
     no-ops when the site's profile version already matches ours.
     Rewrite the action directly.
 
-    Idempotent. No inner ``isOlderVersion`` guard: comparing a
+    Idempotent. No inner `isOlderVersion` guard: comparing a
     dotted setup.py version ("2.1.0") against a 4-digit metadata
-    version ("2000") via ``pkg_resources.parse_version`` gives
+    version ("2000") via `pkg_resources.parse_version` gives
     "2.1.0 < 2000" (release tuple (2, 1, 0) < (2000,)), which
-    would incorrectly short-circuit the handler. ``portal_setup``
-    already gates the step through the ZCML ``source`` /
-    ``destination`` values, so the inner check is also redundant.
+    would incorrectly short-circuit the handler. `portal_setup`
+    already gates the step through the ZCML `source` /
+    `destination` values, so the inner check is also redundant.
 
     :param tool: The portal_setup tool.
     """

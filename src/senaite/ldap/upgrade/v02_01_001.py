@@ -22,15 +22,15 @@ def upgrade(tool):
     step while it was a no-op.
 
     The 2000 -> 2100 handler shipped in 2.1.0 short-circuited on
-    ``UpgradeUtils.isOlderVersion``, whose PEP-440 comparison sees
+    `UpgradeUtils.isOlderVersion`, whose PEP-440 comparison sees
     "2.1.0" as less than "2000" (release tuples (2, 1, 0) vs
-    (2000,)). ``portal_setup`` still marked the profile at 2100,
+    (2000,)). `portal_setup` still marked the profile at 2100,
     so those installs can't re-run the previous step. This one
     lifts them off the stale registration.
 
-    Also purges the legacy ``LDAP_Configuration`` action id inherited
-    from ``pas.plugins.ldap.plonecontrolpanel`` -- the new
-    registration uses ``senaite.ldap`` as both action id and appId.
+    Also purges the legacy `LDAP_Configuration` action id inherited
+    from `pas.plugins.ldap.plonecontrolpanel` -- the new
+    registration uses `senaite.ldap` as both action id and appId.
 
     Idempotent.
 

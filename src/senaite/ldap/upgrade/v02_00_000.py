@@ -34,48 +34,48 @@ def upgrade(tool):
     """Migrate a 1.x install to 2.x.
 
     The 2.x line replaces the YAFOWIL-based control panel with a
-    native SENAITE form. The PAS plugin (``pasldap`` in ``acl_users``)
+    native SENAITE form. The PAS plugin (`pasldap` in `acl_users`)
     and its persistent configuration are kept, but four upstream
     defaults that never made sense are corrected so a fresh install
     actually resolves users and groups.
 
     What this step does:
 
-    1. Rewrite the persistent ``portal_controlpanel`` action for
+    1. Rewrite the persistent `portal_controlpanel` action for
        "LDAP / Active Directory" to the new
-       ``@@senaite_ldapcontrolpanel`` URL. Direct write rather than
-       ``runImportStepFromProfile("controlpanel")`` because the GS
+       `@@senaite_ldapcontrolpanel` URL. Direct write rather than
+       `runImportStepFromProfile("controlpanel")` because the GS
        import silently no-ops when the site's profile version
        already matches ours -- which happens as soon as the 2.x
        sdist is installed, leaving the 1.x
-       ``plone_ldapcontrolpanel`` URL in place.
+       `plone_ldapcontrolpanel` URL in place.
 
-    2. Remove orphan ``yafowil`` / ``plone.bundles/yafowil`` registry
+    2. Remove orphan `yafowil` / `plone.bundles/yafowil` registry
        records left by the upstream profile.
 
-    3. Apply opinionated defaults for the four ``pas.plugins.ldap``
+    3. Apply opinionated defaults for the four `pas.plugins.ldap`
        fields that ship at upstream-noise values:
 
-       - ``users.scope`` / ``groups.scope`` == ``BASE`` -> ``SUBTREE``
-         (``BASE`` only ever returns the base DN entry itself.)
-       - empty ``users.objectClasses`` -> ``[inetOrgPerson]``
-       - empty ``groups.objectClasses`` -> ``[groupOfNames]``
+       - `users.scope` / `groups.scope` == `BASE` -> `SUBTREE`
+         (`BASE` only ever returns the base DN entry itself.)
+       - empty `users.objectClasses` -> `[inetOrgPerson]`
+       - empty `groups.objectClasses` -> `[groupOfNames]`
 
        Deliberately-set values (real scope choice, non-empty
        objectClasses) are left alone. Idempotent.
 
-    4. Migrate the persisted ``pasldap`` instance from
-       ``pas.plugins.ldap.plugin.LDAPPlugin`` to the vendored
-       ``senaite.ldap.pas.plugin.LDAPPlugin``: snapshot
-       ``settings`` + ``plugin_caching`` + the set of currently
+    4. Migrate the persisted `pasldap` instance from
+       `pas.plugins.ldap.plugin.LDAPPlugin` to the vendored
+       `senaite.ldap.pas.plugin.LDAPPlugin`: snapshot
+       `settings` + `plugin_caching` + the set of currently
        activated PAS interfaces, delete and recreate under the
        same id, then restore state. The opinionated defaults from
        step 3 are written before the swap and therefore carried
        across. Idempotent (no-op when the instance is already on
        our class).
 
-    5. Deactivate the ``IUserAdderPlugin`` interface on the
-       ``pasldap`` plugin. ``doAddUser`` is a stub that always
+    5. Deactivate the `IUserAdderPlugin` interface on the
+       `pasldap` plugin. `doAddUser` is a stub that always
        returns False, so the active checkbox in the ZMI Activate
        tab is misleading. Deactivating it lets the Plone
        "add user" form fall straight through to the local user
@@ -104,7 +104,7 @@ def drop_yafowil_registry_records(portal):
     """Delete registry records left by the dropped YAFOWIL bundle.
 
     The 2.x `senaite.ldap.setuphandlers.REGISTRY_KEYS` list contains
-    both the ``pas.plugins.ldap`` prefix (kept -- it's the PAS plugin
+    both the `pas.plugins.ldap` prefix (kept -- it's the PAS plugin
     configuration we still use) and the YAFOWIL prefixes (purged).
     The uninstall handler iterates the same list; this upgrade step
     only purges the YAFOWIL part.
@@ -131,7 +131,7 @@ def drop_yafowil_registry_records(portal):
 
 
 def apply_sane_pasldap_defaults(portal):
-    """Rewrite upstream-noise ``pas.plugins.ldap`` fields to defaults.
+    """Rewrite upstream-noise `pas.plugins.ldap` fields to defaults.
 
     See `_apply_defaults` for the per-field rules.
 
@@ -169,8 +169,8 @@ def _apply_defaults(config, label, default_objectclasses):
     upgrade.
 
     :param config: `ILDAPUsersConfig` or `ILDAPGroupsConfig`.
-    :param label: Short label for log messages (``"users"`` /
-        ``"groups"``).
+    :param label: Short label for log messages (`"users"` /
+        `"groups"`).
     :param default_objectclasses: Default object-class list to apply
         when the field is empty.
     """
