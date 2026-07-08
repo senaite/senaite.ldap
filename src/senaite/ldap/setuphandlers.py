@@ -19,6 +19,19 @@ REGISTRY_KEYS = [
 
 PLUGIN_ID = "pasldap"
 
+# Configlet metadata written by `register_controlpanel`. Mirrors
+# `profiles/default/controlpanel.xml` but bypasses the GS controlpanel
+# importer, which requires the profile step to actually run to
+# overwrite the persistent action -- something that silently doesn't
+# happen when an existing install already registers the profile at
+# our current metadata version.
+CONFIGLET_ACTION_ID = "LDAP_Configuration"
+CONFIGLET_TITLE = u"LDAP / Active Directory"
+CONFIGLET_APP_ID = "senaite.ldap"
+CONFIGLET_CATEGORY = "plone-users"
+CONFIGLET_URL = "string:${portal_url}/@@senaite_ldapcontrolpanel"
+CONFIGLET_PERMISSION = "Manage portal"
+
 
 def install(context):
     """Install handler
@@ -29,7 +42,45 @@ def install(context):
     portal = context.getSite()  # noqa
     install_pas_plugin(portal)
     deactivate_user_adder(portal)
+    register_controlpanel(portal)
     logger.info("SENAITE LDAP install handler [DONE]")
+
+
+def register_controlpanel(portal):
+    """Point the "LDAP / Active Directory" configlet at our own view.
+
+    Rewrites the persistent ``portal_controlpanel`` action so the
+    Site Setup link resolves to ``@@senaite_ldapcontrolpanel``
+    instead of the 1.x ``plone_ldapcontrolpanel`` URL registered by
+    the dropped ``pas.plugins.ldap.plonecontrolpanel`` profile.
+
+    Direct write instead of ``runImportStepFromProfile("controlpanel")``
+    because the GS import silently no-ops when the site's profile
+    version already matches ours -- which is the case as soon as
+    the 2.x sdist is installed. Idempotent.
+
+    :param portal: Plone site root.
+    """
+    tool = getattr(portal, "portal_controlpanel", None)
+    if tool is None:
+        logger.warning(
+            "portal_controlpanel not found; skipping configlet rewrite")
+        return
+
+    tool.unregisterConfiglet(CONFIGLET_ACTION_ID)
+    tool.registerConfiglet(
+        id=CONFIGLET_ACTION_ID,
+        name=CONFIGLET_TITLE,
+        action=CONFIGLET_URL,
+        appId=CONFIGLET_APP_ID,
+        condition="",
+        category=CONFIGLET_CATEGORY,
+        permission=CONFIGLET_PERMISSION,
+        visible=1,
+        icon_expr="")
+    logger.info(
+        "Registered %r configlet at %s",
+        CONFIGLET_ACTION_ID, CONFIGLET_URL)
 
 
 def deactivate_user_adder(portal):

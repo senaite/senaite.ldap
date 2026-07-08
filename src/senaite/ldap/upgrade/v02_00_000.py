@@ -18,11 +18,11 @@ from senaite.ldap import logger
 from senaite.ldap import PRODUCT_NAME
 from senaite.ldap.setuphandlers import deactivate_user_adder
 from senaite.ldap.setuphandlers import install_pas_plugin
+from senaite.ldap.setuphandlers import register_controlpanel
 from senaite.ldap.setuphandlers import REGISTRY_KEYS
 
 
 version = "2.0.0"
-profile = "profile-{0}:default".format(PRODUCT_NAME)
 
 PLUGIN_ID = "pasldap"
 
@@ -42,12 +42,14 @@ def upgrade(tool):
 
     What this step does:
 
-    1. Re-import the senaite.ldap ``controlpanel`` profile so the
-       "LDAP / Active Directory" entry appears in Site Setup under
-       the new ``@@senaite_ldapcontrolpanel`` URL. The 1.x configlet
-       was registered by ``pas.plugins.ldap.plonecontrolpanel``,
-       which we no longer install; without re-importing here the
-       configlet would silently disappear on upgrade.
+    1. Rewrite the persistent ``portal_controlpanel`` action for
+       "LDAP / Active Directory" to the new
+       ``@@senaite_ldapcontrolpanel`` URL. Direct write rather than
+       ``runImportStepFromProfile("controlpanel")`` because the GS
+       import silently no-ops when the site's profile version
+       already matches ours -- which happens as soon as the 2.x
+       sdist is installed, leaving the 1.x
+       ``plone_ldapcontrolpanel`` URL in place.
 
     2. Remove orphan ``yafowil`` / ``plone.bundles/yafowil`` registry
        records left by the upstream profile.
@@ -95,7 +97,7 @@ def upgrade(tool):
     logger.info("Upgrading {0}: {1} -> {2}".format(
         PRODUCT_NAME, ver_from, version))
 
-    import_controlpanel(tool)
+    register_controlpanel(portal)
     drop_yafowil_registry_records(portal)
     apply_sane_pasldap_defaults(portal)
     install_pas_plugin(portal)
@@ -104,18 +106,6 @@ def upgrade(tool):
     logger.info("{0} upgraded to version {1}".format(
         PRODUCT_NAME, version))
     return True
-
-
-def import_controlpanel(setup_tool):
-    """Re-import the ``controlpanel`` step from the default profile.
-
-    Registers the configlet under the new
-    ``@@senaite_ldapcontrolpanel`` URL.
-
-    :param setup_tool: The portal_setup tool.
-    """
-    setup_tool.runImportStepFromProfile(profile, "controlpanel")
-    logger.info("Re-imported senaite.ldap controlpanel profile")
 
 
 def drop_yafowil_registry_records(portal):
